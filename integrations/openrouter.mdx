@@ -1,0 +1,137 @@
+---
+title: "Set Up OpenRouter with Terma via Broadcast"
+sidebarTitle: "OpenRouter"
+description: "Point OpenRouter Broadcast at Terma's OpenTelemetry endpoint to track every routed model call — tokens, cost, provider, and session — across all the models your team uses."
+---
+
+OpenRouter routes model calls across many providers — Claude, GPT, Gemini, Llama, Grok, Mistral, and more — from a single balance. OpenRouter's **Broadcast** feature exports a trace for every completed request, and Terma accepts those traces directly on its OpenTelemetry endpoint. Once connected, each routed call appears in Terma with the model it actually hit, the provider that served it, the tokens it used, and the cost charged against your OpenRouter balance.
+
+No agent, SDK change, or proxy is required. The connection is configured once in OpenRouter and applies to every request made with the keys you enable it for.
+
+## How it works
+
+1. You create a **server key** for a Terma project. This key authenticates telemetry sent to Terma.
+2. In OpenRouter, you add Terma as an **OpenTelemetry Collector** destination under Broadcast, using Terma's OTLP endpoint and the server key as a bearer token.
+3. After every request, OpenRouter asynchronously posts an OTLP trace to Terma. Terma recognises the OpenRouter format, records a model call with tokens and cost, and groups calls into sessions.
+
+Traces are sent after the request completes, so enabling Broadcast does not add latency to your OpenRouter calls.
+
+## Before you start
+
+- A Terma project. Every server key is scoped to one project, and OpenRouter traffic lands in that project.
+- Access to the OpenRouter account or organization whose traffic you want to track. Editing an organization's Broadcast settings requires an OpenRouter **organization admin**.
+
+## Setup
+
+<Steps>
+  <Step title="Get connection details from Terma">
+    Open your project in the Terma dashboard and go to **Connectors**. Under **Server keys**, create a key for OpenRouter and give it a recognisable name, for example `OpenRouter`.
+
+    If you are setting up a new project, the project setup guide offers the same thing: choose **Router or other tool** and click **Generate connection details**.
+
+    Note two values:
+
+    - The **OTLP endpoint** shown on the page (for example `https://otel.terma.ai`)
+    - The **key** itself
+
+    <Warning>
+      The full key is only shown once. Copy it before leaving the page. You can revoke it later from Connectors, but you cannot view it again.
+    </Warning>
+  </Step>
+  <Step title="Enable Broadcast in OpenRouter">
+    In OpenRouter, open [Settings → Observability](https://openrouter.ai/settings/observability) and turn on **Enable Broadcast**.
+
+    Find **OpenTelemetry Collector** in the destination list and click its edit icon.
+  </Step>
+  <Step title="Add Terma as the destination">
+    Fill in the destination with the values from step 1. OpenRouter needs the full traces URL, so append `/v1/traces` to the endpoint Terma showed you.
+
+    **Endpoint**
+
+    ```text
+    https://otel.terma.ai/v1/traces
+    ```
+
+    **Headers (optional)** — a JSON object carrying your Terma server key:
+
+    ```json
+    {
+      "Authorization": "Bearer <your-terma-server-key>"
+    }
+    ```
+
+    Click **Test Connection**. OpenRouter sends a small synthetic span to Terma and only saves the destination if Terma accepts it.
+
+    <Tip>
+      Leave the destination's sampling rate at `1.0`. Sampled-out requests never reach Terma, so any lower rate undercounts spend.
+    </Tip>
+  </Step>
+  <Step title="Make a request and verify">
+    Send any request through OpenRouter with a key covered by the Broadcast settings you just edited. Within a minute, the call should appear in Terma:
+
+    - **Overview** lists `openrouter` under **Spend by source**
+    - **Sessions** shows the request as a session, with the model and provider that served it
+
+    From the terminal, the same data is available with:
+
+    ```bash
+    terma usage --since 1h --group-by source
+    ```
+
+    An `openrouter` row confirms traces are arriving.
+  </Step>
+</Steps>
+
+## What Terma captures
+
+| Signal | Detail |
+| --- | --- |
+| Model | The model requested and the model that actually responded, using OpenRouter's `vendor/model` slugs |
+| Provider | The upstream provider OpenRouter routed to, including fallbacks after a failed attempt |
+| Tokens | Input, output, and cached input tokens per call |
+| Cost | The USD cost OpenRouter charged for the call, priced on the model that served it |
+| Latency | Time to first token and total duration |
+| Conversation | Prompt, completion, and tool calls, unless Privacy Mode is on (see below) |
+| Caller | The OpenRouter API key that made the call, by name |
+
+Cost comes straight from OpenRouter's own accounting, so it matches the drawdown on your OpenRouter balance rather than a Terma-side estimate.
+
+## Attributing calls to people and sessions
+
+OpenRouter identifies each call by the **API key** that made it, and Terma uses that key as the principal for the call. The key's name in OpenRouter is what you will see in Terma's Team and People views.
+
+To get useful attribution:
+
+- **Use one OpenRouter key per person or per service**, named after them. A single shared key makes every call look like the same actor.
+- **Map keys to people** in the Terma dashboard under **Project Settings → Principal mapping**. An organization admin can alias an OpenRouter key to the person who owns it, so their OpenRouter usage sits alongside their Claude Code or Codex activity.
+
+To group related requests into one Terma session, pass a `session_id` in the request body (or an `x-session-id` header). Every call sharing that value lands in the same session:
+
+```json
+{
+  "model": "anthropic/claude-sonnet-4",
+  "session_id": "review-pr-4821",
+  "messages": [{ "role": "user", "content": "Summarise the diff." }]
+}
+```
+
+Without a `session_id`, each request is its own session.
+
+<Note>
+  In `terma usage`, OpenRouter traffic that is not mapped to a person shows as `(no user id)`. Run `terma usage --group-by api-key` to see which key it came from, then map that key in Principal mapping.
+</Note>
+
+## Privacy Mode
+
+OpenRouter's Broadcast settings include a **Privacy Mode** that strips prompts and completions from exported traces. With it enabled, Terma still receives model, provider, tokens, cost, and timing for every call, so spend tracking is unaffected. Session replay will show the call structure and usage but not the conversation text.
+
+## Multiple OpenRouter accounts or organizations
+
+Broadcast settings live on the OpenRouter account or organization, and each Terma server key belongs to one project. To send traffic from several OpenRouter organizations to Terma, configure Broadcast in each one. Point them at the same server key to land everything in one project, or create a key per project to keep them separate.
+
+## Troubleshooting
+
+- **Test Connection fails.** Check that the endpoint ends in `/v1/traces` and that the header value starts with `Bearer ` followed by the full key. A revoked key is rejected the same way; create a new one in Connectors.
+- **The test passes but no sessions appear.** Confirm the requests are being made with a key covered by the Broadcast settings you edited, and that the destination's sampling rate is `1.0`. Traces arrive asynchronously, so allow a minute after the request.
+- **Everything shows as one person.** The calls share an OpenRouter API key. Create per-person keys, or map the shared key in Principal mapping.
+- **Spend looks like an estimate.** It is not. Costs for OpenRouter calls are the amounts OpenRouter reported for each request. Estimates marked `est.` only appear for sources that do not report cost themselves.

@@ -1,0 +1,74 @@
+---
+title: "Manage Agent Harness Connections with terma connect"
+sidebarTitle: "Harnesses"
+description: "terma connect, terma disconnect, and terma harness status manage which coding agents export session events to Terma, with per-source control via --source."
+---
+
+A harness is a connected coding agent — Claude Code, Codex, Cursor, or OpenCode — that exports session events to Terma. The harness commands let you add, remove, and inspect those connections so you control exactly which agents contribute to your activity feed.
+
+## terma connect
+
+Point one or more agent harnesses at Terma to start exporting session events.
+
+```bash
+terma connect [--source <agent>]
+```
+
+Without `--source`, `terma connect` opens an interactive selector listing every harness Terma can detect on your machine. Select one or more to wire them up in a single pass.
+
+```bash title="Connect a specific harness"
+terma connect --source claude-code
+```
+
+## terma disconnect
+
+Stop a harness from exporting events to Terma. The underlying agent is left untouched — only the Terma export is disabled.
+
+```bash
+terma disconnect [--source <agent>]
+```
+
+<Note>
+`terma disconnect` does not uninstall or modify the coding agent itself. It removes the Terma hook configuration so the agent stops forwarding events. You can reconnect at any time with `terma connect`.
+</Note>
+
+## terma harness status
+
+Show which harnesses are currently connected, when they last sent an event, and how many events they have delivered.
+
+```bash
+terma harness status
+```
+
+The output table includes:
+
+| Column | Description |
+|---|---|
+| Source | The agent identifier (e.g. `claude-code`) |
+| Status | `connected`, `disconnected`, or `error` |
+| Last Event | Timestamp of the most recent event received |
+| Event Count | Total events delivered from this harness |
+
+## Supported Sources
+
+The following sources are recognized by name with `--source`:
+
+- `claude-code`
+- `codex`
+- `cursor`
+- `opencode`
+
+Terma also infers activity from traffic originating via `openrouter` and direct Anthropic or OpenAI SDK calls, even without an explicit harness hook.
+
+## Relationship to terma setup
+
+`terma setup` calls `terma connect` for each coding agent it detects on your machine during initial onboarding — you do not need to run `terma connect` manually for agents that were present at setup time. Use `terma connect` when you install a new agent after setup, or when you want to add a harness that was skipped during the initial configuration.
+
+```bash title="Add a harness installed after setup"
+terma connect --source opencode
+terma harness status
+```
+
+<Note>
+Each harness adapter is a one-liner that calls `terma hook <event>`. All logic lives in the Terma binary, so updating Terma updates the hook behavior without touching committed files.
+</Note>

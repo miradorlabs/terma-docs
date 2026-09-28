@@ -1,0 +1,37 @@
+---
+title: "terma principal find: Resolve People Across AI Tools"
+sidebarTitle: "terma principal find"
+description: "terma principal find resolves a name, email, alias, or ID to all principals (identities) a person holds across their connected AI tools."
+---
+
+One person often appears as multiple principals in Terma. The same developer may have a Claude Code identity, a Codex identity, and an OpenRouter identity — each observed independently by a different tool. `terma principal find` resolves a name, email, alias, or user ID to every principal that person holds, so you can confirm that usage aggregation and attribution are working as expected.
+
+## What is a principal?
+
+A principal is a unique identity Terma observed from a specific tool or provider. Terma creates one principal per (person, source) pair the first time it sees activity from that combination. One real person can hold several principals — for example, a Claude Code principal and a separate Codex principal — and `terma usage` aggregates them automatically once their identities are bound via `terma setup`.
+
+## Usage
+
+```bash
+terma principal find <query>
+```
+
+The `<query>` argument matches against name, email, alias, or user ID. Matching is case-insensitive and supports partial matches on names.
+
+## Example
+
+```bash
+terma principal find dawson
+```
+
+The output lists every principal that matched, showing the tool or source it came from and the user ID Terma assigned. This is the same user ID that appears in the `USER ID` column of `terma usage` output — useful for confirming that a `--user dawson` filter in `terma usage` is picking up rows from every source you expect.
+
+## When to use
+
+- **Usage shows `(no user id)` for some traffic** — Someone's identity from a specific tool has not been bound yet. Use `terma principal find` to check what principals exist, then ask the developer to run `terma setup` on their machine.
+- **Confirming cross-tool aggregation** — You want to verify that a person's activity from Claude Code and Codex is being rolled up into the same row in `terma usage`.
+- **Onboarding a new team member** — After a new developer runs `terma setup`, use `terma principal find` to confirm their principals are visible and correctly attributed.
+
+<Note>
+  If a principal is not found for a given tool, traffic from that tool is attributed to `(no user id)` in usage reports. Have the developer run `terma setup` on their machine to bind their identity and create the missing principal.
+</Note>

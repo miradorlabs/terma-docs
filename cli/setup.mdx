@@ -1,0 +1,66 @@
+---
+title: "terma setup: Sign In and Connect Your Coding Agents"
+sidebarTitle: "terma setup"
+description: "terma setup signs you in through the browser, selects your project, binds your identity, and connects Claude Code, Codex, and OpenCode to Terma in one command."
+---
+
+Run `terma setup` once on each developer machine to authenticate with Terma, choose the project you want to report activity to, and wire up every coding agent you have installed. Before writing anything to disk, the command prints a checklist of what it will configure so you can review the plan first.
+
+## What it does
+
+`terma setup` is a one-time onboarding command — one run per developer machine. It works through four steps automatically:
+
+1. **Sign in** — Opens your browser for a PKCE OAuth flow. After you approve, a single-use code completes the exchange. No password is stored.
+2. **Select project** — Asks which Terma project this machine's activity should report to. Skip this prompt with `--project`.
+3. **Bind your identity** — Maps your email and any aliases to sessions emitted by every tool Terma connects, so activity from Claude Code and Codex both resolve to you.
+4. **Connect agents** — Configures each coding agent it finds on your machine. A checklist shows every file and environment variable it will touch before anything is written.
+
+## Usage
+
+```bash
+terma setup
+```
+
+## Flags
+
+<ParamField query="--project" type="string">
+  Pre-select a project by name, skipping the interactive prompt.
+</ParamField>
+
+<ParamField query="--dry-run" type="flag">
+  Print the checklist of changes without writing any files or environment variables. Use this to preview what `terma setup` will do on a new machine.
+</ParamField>
+
+## What gets configured
+
+`terma setup` detects which agents are installed and configures only the ones it finds.
+
+**Claude Code** — Adds three hook entries to `.claude/settings.json` (`SessionStart`, `PostToolUse`, `SessionEnd`) and sets the OpenTelemetry export endpoint so spans flow to Terma.
+
+**Codex** — Registers a notify entry per turn in `.codex/hooks.json` so Terma receives an event for every Codex action.
+
+**Cursor** — Writes hook entries to `.cursor/hooks.json` for `sessionStart`, `afterFileEdit`, and `sessionEnd`. Spend data arrives via the Enterprise export.
+
+**OpenCode** — Registers a dependency-free plugin that exports spans over OpenTelemetry. No changes to your OpenCode configuration files are needed beyond the plugin entry.
+
+**Identity binding** — Your email and any aliases are recorded so sessions from all connected tools resolve to a single person in `terma usage` output and the dashboard.
+
+Each agent adapter is a one-liner that calls `terma hook <event>`. All hook logic lives inside the `terma` binary, so upgrading the CLI with `terma update` is the only change you ever need to make to stay current — the committed hook files never need to change.
+
+<Note>
+  Run `terma setup` once per developer machine. If you get a new machine, reinstall your tools, or move to a different Terma project, run it again to re-bind and reconfigure.
+</Note>
+
+## After setup
+
+Confirm everything is wired correctly before your first session:
+
+```bash
+# Show which agents and projects are connected
+terma status
+
+# Run end-to-end checks and see predicted coverage
+terma doctor
+```
+
+`terma status` lists what is connected and what is queued. `terma doctor` goes further — it runs a scratch commit in a temporary worktree and reports the coverage percentage the dashboard will attribute to you.

@@ -1,0 +1,69 @@
+---
+title: "Manage Your Terma Account and Machine Authorization"
+sidebarTitle: "Account"
+description: "terma login, logout, whoami, org list, and update manage credentials, memberships, and binary updates from the terminal on a per-machine basis."
+---
+
+The account commands manage your machine's authorization credential and let you inspect who you are authenticated as, which organization and project are active, and what the credential is permitted to do. Each machine holds its own credential — revoking one does not affect others.
+
+## terma login
+
+Authorize this machine to act on your behalf.
+
+```bash
+terma login
+```
+
+`terma login` opens a browser-based PKCE flow and issues a machine credential scoped to your user and organization. You need to run it when:
+
+- You are setting up Terma on a new machine
+- Your existing credential has expired
+- `terma whoami` returns an authentication error
+
+## terma logout
+
+Revoke this machine's credential from Terma's side.
+
+```bash
+terma logout
+```
+
+The credential stored on this machine is invalidated immediately. Other authorized machines and your Terma account are not affected.
+
+<Note>
+Machine credentials are scoped per-device. Revoking one machine's credential does not affect other authorized machines or your account.
+</Note>
+
+## terma whoami
+
+Show the identity and scope of the credential currently active on this machine.
+
+```bash
+terma whoami
+```
+
+The output includes your user email, organization, currently selected project, credential expiry time, and the set of permitted scopes. Use this command to confirm your context before running queries or to diagnose authentication failures.
+
+## terma org list
+
+List every organization your account belongs to.
+
+```bash
+terma org list
+```
+
+The output includes the org slug, display name, and your role in each org. This is useful when your account spans multiple organizations — for example, a consultant working across several client workspaces.
+
+## terma update
+
+Download and install the latest Terma binary in-place.
+
+```bash
+terma update
+```
+
+The update command fetches the latest release, verifies the checksum, and replaces the current binary. No manual download or PATH change is required.
+
+<Note>
+After updating, run `terma doctor` to confirm hooks and harnesses are still working correctly.
+</Note>

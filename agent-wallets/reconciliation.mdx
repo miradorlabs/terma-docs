@@ -1,0 +1,80 @@
+---
+title: "Reconcile Agent Wallet Payments Against Tool Calls"
+sidebarTitle: "Reconciliation"
+description: "Terma reconciles every x402 on-chain payment against the tool call that claimed it, flagging discrepancies between claimed and settled amounts."
+---
+
+Reconciliation ensures every dollar an agent spends on-chain is traceable to the session and tool call that authorized it. When an agent claims an x402 payment and the settlement amount differs from what was claimed — or when a payment arrives with no matching tool call at all — Terma flags the discrepancy so you can investigate before it becomes an audit problem.
+
+## Claimed vs. Settled
+
+When an agent tool call initiates an x402 payment, Terma records the **claimed amount** at the moment of the call. When the payment settles on-chain, Terma fetches the **settled amount** and compares the two. A match closes the record cleanly. A mismatch opens a reconciliation issue.
+
+This two-phase model means you always have visibility into what agents said they would spend and what actually left the wallet.
+
+## Example Discrepancy
+
+The following shows a reconciliation issue flagged for a single Exa search tool call:
+
+| Field | Value |
+|---|---|
+| Session | S-1017 |
+| Tool call | Exa search |
+| Wallet | 0xB2e0…5D19 |
+| Claimed | $0.42 |
+| Settled on-chain | $0.57 |
+| Status | **Discrepancy — flagged to wallet owner** |
+
+The $0.15 gap between claimed and settled appears as an open finding in Dashboard → Agent Wallets → Reconciliation, linked back to the originating session for replay and review.
+
+## What Gets Flagged
+
+Terma opens a reconciliation finding for any of the following conditions:
+
+<AccordionGroup>
+  <Accordion title="Claimed ≠ settled amount">
+    The amount recorded at tool-call time does not match the amount that settled on-chain. This is the most common discrepancy and typically indicates a dynamic pricing adjustment by the service provider.
+  </Accordion>
+  <Accordion title="Unattributed outflow">
+    A payment left a wallet with no matching tool call in any recorded session. This can indicate an agent operating outside Terma's harness, a missed hook event, or unauthorized wallet activity.
+  </Accordion>
+  <Accordion title="Inferred wallet spending">
+    A wallet address that has not been registered in your treasury made an on-chain payment. Terma can attribute the spend to the address but cannot link it to an owner or budget envelope until you register it.
+  </Accordion>
+  <Accordion title="Settlement delay">
+    The on-chain settlement did not arrive within the expected window after the tool call. Delayed settlements leave claimed amounts in an open state and can distort real-time budget views.
+  </Accordion>
+</AccordionGroup>
+
+## Reviewing Reconciliation Issues
+
+Navigate to **Dashboard → Agent Wallets → Reconciliation** to see all open and resolved issues. Each issue surfaces:
+
+- The **session** and **tool call** that initiated the payment
+- The **wallet address** that made the payment
+- The **claimed amount** and the **settled amount** side by side
+- A **link to the session replay** so you can step through the agent's full context at the time of the call
+
+You can filter by wallet, session, date range, or issue type to focus on the discrepancies that matter most.
+
+## Refill Pending
+
+A wallet in **refill pending** status has dropped below its target balance and is waiting for the next scheduled refill from the treasury. While in this state, no new payments are authorized from that wallet. Any agent tool calls that attempt an x402 payment will be blocked until the refill completes.
+
+If an agent is blocked unexpectedly, check Dashboard → Agent Wallets for any wallets in refill pending status and either wait for the scheduled refill or trigger an on-demand refill from the treasury view.
+
+## Audit Trail
+
+All wallet activity is retained for audit purposes. The full lifecycle — funded, claimed, settled, flagged, and resolved — is recorded against each wallet and each session.
+
+To export token usage and cost data across any time window, use:
+
+```bash
+terma usage --since 30d
+```
+
+You can also export directly from Dashboard → Agent Wallets using the date-range controls, and download results in JSON or CSV.
+
+<Tip>
+Register all agent wallet addresses before they appear in production traffic. Proactive registration gives you full reconciliation context from the first payment.
+</Tip>

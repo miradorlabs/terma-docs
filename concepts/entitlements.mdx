@@ -1,0 +1,69 @@
+---
+title: "Entitlement Portfolios: AI Cost Tracking Across Providers"
+sidebarTitle: "Entitlements"
+description: "Terma models each engineer's AI entitlement portfolio — subscriptions, metered keys, and prepaid balances — and tracks spend across all providers."
+---
+
+A typical engineer on an AI-enabled team does not have one AI rail — they have several. They might hold a Claude Max subscription for interactive work, a Codex seat provisioned by their organization, an OpenRouter prepaid balance for experiments, and a raw Anthropic API key they set up before any of the above existed. Each rail has different pricing, different throttling behavior, and a different owner. Without a unified model, spend is invisible, throttles are surprising, and governance is guesswork. Terma models the full entitlement portfolio for every engineer and reconciles activity against the rail it actually ran on.
+
+## Entitlement types
+
+Terma tracks three categories of entitlement:
+
+| Type | Examples | What Terma tracks |
+|---|---|---|
+| **Subscription seats** | Claude Max 5×, Claude Max 20×, Codex seat | Percentage of usage window consumed; throttle events when the window is exhausted |
+| **Metered keys** | Anthropic API key, OpenAI API key, xAI API key | Token counts per call; dollar spend per session and per day |
+| **Prepaid balances** | OpenRouter prepaid credit | Remaining balance; burn rate; projected depletion date |
+
+## Cost bases
+
+Terma can report spend on any of three cost bases, depending on what your team needs:
+
+- **Invoiced** — the actual amount billed by the provider for the activity period
+- **Amortized** — subscription seat costs spread across the window's usage, giving a per-session or per-token equivalent
+- **API-equivalent (notional)** — what the same tokens would have cost on a pay-per-token API, regardless of the rail used
+
+<Note>
+  API-equivalent figures are always labeled as **notional** in the dashboard and CLI output. They are useful for comparing activity across subscription and metered rails but do not represent actual spend.
+</Note>
+
+## Registering entitlements
+
+Terma populates your entitlement portfolio from three sources:
+
+1. **Billing connections** — link your provider billing accounts to register subscription seats and prepaid balances directly
+2. **Harness hooks** — the agent integration (Claude Code, Codex, etc.) observes the model and usage metadata on each call and attributes it to the correct rail automatically
+3. **Traffic inference** — when a harness reports activity on an unrecognized key, Terma infers the entitlement type from the traffic pattern and surfaces it as a finding for you to confirm or dismiss
+
+## Cross-rail findings
+
+Because Terma sees all rails simultaneously, it can flag inefficiencies that are invisible when you look at any one provider in isolation:
+
+- **Seat headroom unused** — activity concentrated on metered keys or prepaid balances while a subscription seat had remaining window capacity
+- **Window throttles** — sessions stalling because an engineer hit 92% of their Claude Max window by early afternoon, causing retries and delays for the rest of the day
+- **Interactive work on metered keys** — a metered API key handling real-time, back-and-forth sessions that a subscription seat should be absorbing
+- **Personal API keys on work repositories** — inferred from traffic, flagged as a governance finding when a key not registered to the organization appears in session data
+
+<Warning>
+  Unmanaged rails (personal API keys inferred from traffic) appear as governance findings in the dashboard. They do not block activity, but they represent spend and data that falls outside your organization's visibility.
+</Warning>
+
+## Multi-provider ledger
+
+Agent activity does not always stay on a single rail. A session might start in Claude Code, route through OpenRouter, and resolve on a different model entirely. Terma treats this as one session: attributed once to the engineer and project that ran it, priced on the actual rail each call used, and surfaced as a single line in `terma usage` output. There is no double-counting and no attribution gap when a call crosses provider boundaries.
+
+```bash title="View spend by provider, person, and model"
+$ terma usage --since today
+SOURCE       NAME          USER ID           COST USD  INPUT    OUTPUT  CACHE READ  CACHE WRITE  TOTAL TOKENS  MODEL CALLS
+claude-code  Ada           7c5c8f2e1a9b4d03  18.9180   1344655  150364  12977317    439792       14912128      77
+claude-code  Priya         b31e0d9c77a24f18  7.4400    966138   119922  8413746     246140       9745946       86
+codex        Ada           7c5c8f2e1a9b4d03  5.9220    1142646  52872   3672026     0            4867544       37
+opencode     Marco         e9a4c1207d5b3f66  3.6120    492068   57846   3006601     72264        3628779       44
+openrouter   (no user id)                    1.2840    1872240  144066  0           0            2016306       127
+TOTAL                                        37.1760   5817747  525070  28069690    758196       35170703      371
+```
+
+<Tip>
+  The `openrouter (no user id)` row in the example above is a cross-rail finding waiting to happen — activity on a rail with no principal attached. Use `terma principal find` to match it to an engineer, or investigate it as an unmanaged key.
+</Tip>

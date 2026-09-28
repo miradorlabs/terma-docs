@@ -1,0 +1,141 @@
+{
+  "projectType": "saas",
+  "projectName": "Terma",
+  "projectDescription": "Terma is an AI activity observability platform that connects your team's coding agents, providers, and repositories into one attributed view — tracking sessions, token spend, change attribution, and production outcomes across every tool your team uses.",
+  "theme": "luma",
+  "primaryColor": "#6347e0",
+  "lightColor": "#ffffff",
+  "darkColor": null,
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Get Started",
+            "pages": [
+              "introduction",
+              "quickstart",
+              "account-setup"
+            ]
+          },
+          {
+            "group": "Core Concepts",
+            "pages": [
+              "concepts/overview",
+              "concepts/sessions",
+              "concepts/attribution",
+              "concepts/entitlements"
+            ]
+          },
+          {
+            "group": "Integrations",
+            "pages": [
+              "integrations/claude-code",
+              "integrations/codex",
+              "integrations/cursor",
+              "integrations/opencode",
+              "integrations/openrouter"
+            ]
+          },
+          {
+            "group": "Dashboard",
+            "pages": [
+              "dashboard/session-replay",
+              "dashboard/burn-map",
+              "dashboard/breakdowns",
+              "dashboard/budgets",
+              "dashboard/production"
+            ]
+          },
+          {
+            "group": "Agent Wallets",
+            "pages": [
+              "agent-wallets/overview",
+              "agent-wallets/reconciliation"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "CLI Reference",
+        "groups": [
+          {
+            "group": "Overview",
+            "pages": [
+              "cli/overview",
+              "cli/installation"
+            ]
+          },
+          {
+            "group": "Onboarding Commands",
+            "pages": [
+              "cli/setup",
+              "cli/install",
+              "cli/doctor"
+            ]
+          },
+          {
+            "group": "Insight Commands",
+            "pages": [
+              "cli/usage",
+              "cli/sessions",
+              "cli/principals"
+            ]
+          },
+          {
+            "group": "Harness Commands",
+            "pages": [
+              "cli/harnesses",
+              "cli/spool"
+            ]
+          },
+          {
+            "group": "Account Commands",
+            "pages": [
+              "cli/account",
+              "cli/project"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "keyFeatures": [
+    "Session replay with full message, tool call, and cost timeline",
+    "Codebase burn map showing AI activity by file",
+    "Multi-provider entitlement tracking (subscriptions, metered, prepaid, keys)",
+    "Session-to-commit attribution via git commit trailers",
+    "Team breakdowns by person, model, provider, and harness",
+    "Dev-time and run-time budgets with Slack notifications and hard caps",
+    "Agent wallet management and x402 on-chain payment reconciliation",
+    "Production correlation linking AI-assisted changes to outcome metrics",
+    "Cross-rail findings for redundant spend and throttle detection",
+    "CLI for terminal-based querying and repository onboarding"
+  ],
+  "publicApiSurface": [
+    "terma setup",
+    "terma install",
+    "terma uninstall",
+    "terma doctor",
+    "terma status",
+    "terma usage",
+    "terma session list",
+    "terma session get",
+    "terma session events",
+    "terma session git",
+    "terma principal find",
+    "terma connect",
+    "terma disconnect",
+    "terma harness status",
+    "terma spool flush",
+    "terma spool status",
+    "terma login",
+    "terma logout",
+    "terma whoami",
+    "terma project use",
+    "terma org list",
+    "terma update",
+    "terma hook <event>"
+  ]
+}

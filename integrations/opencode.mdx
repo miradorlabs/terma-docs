@@ -1,0 +1,63 @@
+---
+title: "Connect OpenCode to Terma via OpenTelemetry"
+sidebarTitle: "OpenCode"
+description: "Wire OpenCode to Terma using a dependency-free plugin that emits OpenTelemetry from OpenCode events and forwards session and file activity."
+---
+
+OpenCode exposes a plugin interface that Terma uses to capture sessions without adding runtime dependencies to your project. A single plugin converts OpenCode's native events into OpenTelemetry and hands them to the Terma ingest endpoint, giving you the same session timeline, file attribution, and spend visibility you get from other integrations.
+
+## How it works
+
+Terma registers a dependency-free OpenCode plugin during `terma setup`. The plugin sits between OpenCode's event bus and Terma's ingest pipeline and handles three categories of signals:
+
+- **Session events** — session start and end boundaries, used to open and close Terma session records
+- **File events** — every file edit is forwarded to `terma hook post-tool-use` for inclusion in the file manifest used for commit attribution
+- **OTEL export** — token counts, model metadata, and cost flow to Terma's OpenTelemetry endpoint alongside the structural events
+
+Because the plugin has no external dependencies, it does not affect OpenCode's startup time or add packages to your project's lockfile.
+
+## Setup
+
+Run `terma setup` once per developer machine. It installs and configures the OpenCode plugin automatically — no manual plugin registration or config editing required.
+
+```bash
+terma setup
+```
+
+If you need to register the plugin manually (for example, in a CI environment or a machine where `terma setup` cannot run interactively), use:
+
+```bash
+terma connect
+```
+
+Follow the prompts to select OpenCode as the harness. This registers the same plugin and OTEL export configuration that `terma setup` would have applied.
+
+<Tip>
+  OpenCode output switches to JSON automatically when the caller is not a terminal, making it easy to pipe `terma` commands into other tools or CI scripts without extra flags.
+</Tip>
+
+## What's captured
+
+| Signal | Detail |
+|---|---|
+| Session timeline | Start time, end time, duration |
+| File edits | All files modified during the session, forwarded for attribution |
+| Token counts | Input and output tokens per session |
+| Cost | USD cost per session, attributed to the user who ran it |
+| Model | Which model OpenCode used for the session |
+
+## Verifying the connection
+
+After running `terma setup`, confirm that OpenCode is wired correctly:
+
+```bash
+terma harness status
+```
+
+OpenCode should appear as connected. For a full end-to-end check:
+
+```bash
+terma doctor
+```
+
+`terma doctor` verifies that the plugin is installed, that session and file events are reaching Terma, and that the OTEL export is delivering token and cost data. Any misconfiguration surfaces as a specific finding with a suggested fix.

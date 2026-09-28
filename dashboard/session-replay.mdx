@@ -1,0 +1,109 @@
+---
+title: "Replay and Inspect AI Sessions in Terma's Dashboard"
+sidebarTitle: "Session Replay"
+description: "Use Terma's session replay to step through every prompt, tool call, file edit, and model response in a coding session with cost and token context."
+---
+
+Session replay gives you the full timeline of any AI coding session — every prompt sent, every model response received, every file touched, and every tool call made — alongside the token counts and cost that went with it. Whether you're auditing an unexpected bill, debugging a flaky agent run, or understanding why a session ballooned, replay puts the complete record in front of you.
+
+## Navigating to a Session
+
+Open the **Sessions** view in the dashboard. Sessions appear in reverse-chronological order, most recently active first.
+
+Use the filter bar to narrow the list:
+
+- **Person** — filter to a specific engineer or principal
+- **Date range** — pick a preset (today, yesterday, last 7 days) or a custom window
+- **Source** — limit to a single integration (Claude Code, Codex, Cursor, OpenCode, OpenRouter)
+- **Model** — show only sessions that used a given model
+
+Click any row to open the session's replay view.
+
+## Session Timeline
+
+The timeline displays every event in the order it occurred during the session. Each entry shows its timestamp, type, and a one-line summary.
+
+Filter the timeline by event type using the tabs at the top:
+
+| Tab | What it shows |
+|---|---|
+| **All** | Every event in the session, unfiltered |
+| **Conversation** | Prompts and model responses, in order |
+| **Tools** | Every tool call — file reads, edits, bash commands, and any agent-specific tools |
+| **Errors** | Tool failures, context-window errors, and model refusals |
+
+Expand any event to read the full content.
+
+## Token Timeline
+
+The token timeline sits above the event list as a visual chart. It plots token usage across the session so you can spot the moments where context grew large or a prompt spike occurred.
+
+- **Click** any point on the chart to jump to that message in the event list
+- **Drag** to select a range and see the aggregate token count for that slice
+- The chart annotates the **peak token count** and the model in use at that point
+
+If a session switched models mid-run, each segment is color-coded to its model.
+
+## Key Stats
+
+The stats panel in the top-right corner of the replay view summarizes the whole session at a glance:
+
+| Stat | Description |
+|---|---|
+| **Total messages** | Number of conversational turns |
+| **Tool calls** | Count of tool invocations |
+| **Prompts** | Number of user-initiated prompts |
+| **Input tokens** | Tokens sent to the model |
+| **Output tokens** | Tokens returned by the model |
+| **Cache read** | Tokens served from the prompt cache |
+| **Cache write** | Tokens written to the prompt cache |
+| **Cost** | Total USD cost for the session |
+
+## Tool Call Detail
+
+Expand any tool call in the **Tools** tab to inspect it fully:
+
+- **Input** — the exact arguments passed to the tool
+- **Output** — the full result returned (truncated for large outputs, with a "Show full" option)
+- **Duration** — wall-clock time the tool call took
+- **Token cost** — input and output tokens attributed to this call
+
+This is useful for spotting expensive file reads, long-running bash commands, or tool calls that returned errors and triggered retry loops.
+
+## Searching Within a Session
+
+Use the search bar at the top of the timeline to find content within the session. Search matches across:
+
+- Message content (prompts and responses)
+- Tool call inputs and outputs
+- File paths mentioned or edited
+
+Matches are highlighted in the timeline and you can step through them with the arrow keys.
+
+## Full Session View
+
+When a session used context compaction — where the agent summarized earlier context to make room for new turns — the timeline shows only the active window by default. Toggle **Show full session** to expand the view and include compacted turns, so you can trace the complete arc of the work from start to finish.
+
+## From the CLI
+
+The same session data is available in your terminal. Use `terma session events` with the session's routing key:
+
+```bash
+terma session events 018f3a2c-7d4e-7a1b-9c3d-2e5f6a7b8c9d
+```
+
+Add `--tools-only` to focus on tool calls and skip the conversational turns:
+
+```bash
+terma session events 018f3a2c-7d4e-7a1b-9c3d-2e5f6a7b8c9d --tools-only
+```
+
+To find a session's routing key by person, use `terma session list`:
+
+```bash
+terma session list --user ada --since yesterday
+```
+
+<Tip>
+Use `terma session git` with the same routing key to see the git commits and GitHub actions the session performed — useful for linking a session's work to the code it produced.
+</Tip>

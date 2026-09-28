@@ -1,0 +1,77 @@
+---
+title: "Install the Terma CLI on macOS, Linux, or via npm"
+sidebarTitle: "Installation"
+description: "Install the Terma CLI using Homebrew, the install script, or npm. All methods verify the release checksum before installing."
+---
+
+The Terma CLI is a single static binary with no runtime dependency — there is nothing to configure before it runs. Pick the installation method that fits your workflow, and you will have a `terma` command available system-wide in under a minute.
+
+## Install the CLI
+
+<CodeGroup>
+
+```bash Homebrew
+brew install miradorlabs/tap/terma
+```
+
+```bash Install script
+curl -fsSL https://get.terma.ai | sh
+```
+
+```bash npm
+npm install -g @miradorlabs/terma
+```
+
+</CodeGroup>
+
+<Note>
+  All installation methods verify the release checksum before writing the binary to your system.
+</Note>
+
+## Verify the installation
+
+After installing, confirm the binary is on your `PATH` and check the installed version:
+
+```bash
+terma --version
+```
+
+## Update the CLI
+
+To update to the latest release in-place, run:
+
+```bash
+terma update
+```
+
+This replaces the current binary with the newest release without requiring you to re-run your original install method.
+
+## Uninstall from a repository
+
+`terma uninstall` removes everything that `terma install` wrote to a repository — hooks, adapters, and `.terma.toml` — without touching the `terma` binary itself:
+
+```bash
+terma uninstall
+```
+
+Run this from inside the repository you want to clean up.
+
+<Warning>
+  `terma uninstall` only removes repository-level wiring. To remove the `terma` binary from your system, use the uninstall method that matches how you originally installed it (e.g. `brew uninstall terma` or `npm uninstall -g @miradorlabs/terma`).
+</Warning>
+
+## System requirements
+
+- **Operating system:** macOS or Linux
+- **Runtime:** none — the binary is fully self-contained
+- **Architecture:** the install script and Homebrew tap automatically select the correct binary for your platform
+
+## Next step
+
+Once the CLI is installed, run `terma setup` to sign in and connect your coding agents.
+
+<CardGroup cols={1}>
+  <Card title="Quickstart" icon="flag-checkered" href="/quickstart">
+    Sign in, wire your first agent, and see your AI activity attributed in minutes.
+  </Card>
+</CardGroup>

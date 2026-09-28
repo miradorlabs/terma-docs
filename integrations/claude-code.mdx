@@ -1,0 +1,73 @@
+---
+title: "Connect Claude Code to Terma for Session Tracking"
+sidebarTitle: "Claude Code"
+description: "Wire Claude Code to Terma using project hooks in .claude/settings.json and OpenTelemetry export to capture sessions, tool calls, and spend."
+---
+
+Claude Code is one of Terma's most deeply instrumented integrations. By combining lifecycle hooks with an OpenTelemetry export, Terma captures the full arc of every Claude Code session — from the first tool call to the last file write — and attributes tokens, cost, and changes to the person who ran it.
+
+## How it works
+
+Claude Code supports a hooks system in `.claude/settings.json` that fires shell commands at key points in a session's lifecycle. Terma registers three events:
+
+- **SessionStart** — opens a session record and starts the clock
+- **PostToolUse** — fires after every tool call (file edits, reads, shell commands) and forwards the tool payload to Terma for file attribution
+- **SessionEnd** — closes the session and flushes buffered events
+
+In parallel, `terma setup` configures Claude Code's OpenTelemetry export to point at Terma's ingest endpoint. Token counts (input, output, cache read, cache write) and per-call cost arrive through this channel and are joined to the hook-derived session record.
+
+## Setup
+
+Run `terma setup` once per developer machine. It handles hook registration and OTEL configuration automatically — no manual file editing required.
+
+```bash
+terma setup
+```
+
+After setup completes, your `.claude/settings.json` will contain the following hook entries:
+
+```json .claude/settings.json
+{
+  "hooks": {
+    "SessionStart": "terma hook session-start",
+    "PostToolUse": "terma hook post-tool-use",
+    "SessionEnd": "terma hook session-end"
+  }
+}
+```
+
+<Note>
+  Each adapter is a one-liner that shells out to `terma hook <event>`; all logic lives in the binary, so updating Terma never requires touching committed files.
+</Note>
+
+## OpenTelemetry export
+
+`terma setup` also points Claude Code's built-in OTEL export endpoint at Terma. This is the channel through which token counts and cost data arrive — supplementing the structural events that the hooks deliver. Both streams are joined automatically on the session ID so you see a single unified view in the dashboard.
+
+## What's captured
+
+Every connected Claude Code session contributes the following to Terma:
+
+| Signal | Detail |
+|---|---|
+| Session timeline | Start time, end time, duration |
+| Tool calls | File edits, file reads, shell invocations |
+| Model | Which Claude model the session used |
+| Token usage | Input, output, cache read, cache write |
+| Cost | USD cost per session, attributed to the user who ran it |
+
+## Verifying the connection
+
+After running `terma setup`, confirm that Claude Code is wired correctly with two commands:
+
+```bash
+terma harness status
+```
+
+This shows all connected harnesses. Claude Code should appear with a status of **connected**.
+
+```bash
+terma doctor
+```
+
+`terma doctor` runs a scratch session end-to-end and verifies that events are flowing from Claude Code through to Terma's ingest, that the OTEL export is reachable, and that attribution is resolving correctly. Any gaps are surfaced as actionable findings.

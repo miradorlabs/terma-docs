@@ -1,0 +1,68 @@
+---
+title: "How Terma Works: Sessions, Attribution, and Spending"
+sidebarTitle: "Overview"
+description: "Understand Terma's core model: how AI sessions are captured, attributed to people and changes, and how spend is tracked across providers."
+---
+
+Terma organizes AI engineering activity around three sequential steps: **meter** your coding agents to capture every session as it happens, **link** your repositories so git commits carry the sessions that produced them, and **watch** as automated analysis surfaces the patterns — hotspots, retry loops, throttling gaps — that tell you where AI effort is actually going. Each step builds on the last, giving your team a single attributed view that connects an engineer's prompts to the code that shipped and the cost that accrued.
+
+## Sessions
+
+Every conversation with a coding agent becomes a Terma session. A session records the full timeline: each prompt, every tool call, model responses, file reads and writes, token counts broken down by input, output, cache read, and cache write, and total cost in USD. Sessions are captured through harness hooks (for example, the `SessionStart`, `PostToolUse`, and `SessionEnd` hooks in Claude Code) and delivered to Terma in the background with local spooling so nothing is lost if the network drops.
+
+Sessions are the atomic unit everything else is built on. Attribution, spend tracking, budgets, and findings all start from a session.
+
+<Card title="Deep dive: Sessions" icon="messages" href="/concepts/sessions">
+  Learn what a session contains, how replay works, and how to query sessions from the CLI.
+</Card>
+
+## Attribution
+
+Knowing a session happened is only useful if you know who ran it, what code it touched, and whether that code made it into the repository. Terma solves this with a `prepare-commit-msg` git hook that intersects the files staged for a commit against the files each session touched. When there is a match, the hook appends `Agent-Session-Id` and `Agent-Tool` trailer pairs to the commit message — one pair per contributing session. Pure human work gets no trailer. Merge and squash commit messages are never modified.
+
+The result is an unbroken chain from an AI session to the commit it contributed to, preserved in the git history itself.
+
+<Card title="Deep dive: Attribution" icon="code-branch" href="/concepts/attribution">
+  Understand commit trailers, the codebase burn map, and how Terma predicts coverage before your first commit.
+</Card>
+
+## Entitlements
+
+Most engineers carry more than one AI rail: a Claude Max subscription, a Codex seat, an OpenRouter prepaid balance, a raw Anthropic API key. Terma models each engineer's full entitlement portfolio and tracks activity across all of them. For subscription seats, Terma tracks the percentage of the usage window consumed. For metered keys and prepaid balances, it tracks token counts and dollar spend. Cost can be reported on any basis — invoiced, amortized, or API-equivalent — so finance and engineering speak the same language.
+
+<Card title="Deep dive: Entitlements" icon="credit-card" href="/concepts/entitlements">
+  See how Terma models subscriptions, metered keys, and prepaid balances across every provider.
+</Card>
+
+## Findings
+
+Terma runs continuous analysis across sessions, attribution data, and entitlement usage to surface patterns your team would otherwise miss. Findings include:
+
+- **Hotspots** — files re-read by agents in almost every session, indicating ambiguous or poorly documented areas of the codebase
+- **Retry loops** — sessions where the agent repeatedly attempted and failed the same tool call, burning tokens without progress
+- **Redundant spend** — metered key activity that occurred while a subscription seat had remaining headroom
+- **Throttling issues** — sessions stalled because an engineer hit their usage window limit mid-afternoon
+- **Production regressions** — AI-assisted changes correlated with increased cost, loop depth, or reduced resolution rates in production
+
+Findings appear in the **Watch** view in the dashboard and are updated as new sessions arrive.
+
+## Budgets
+
+Terma lets you set spend envelopes at any level of granularity — per team, per area of the repository, or per experiment. Each budget has two thresholds:
+
+- **Soft threshold** — sends a Slack notification while the budget is still active, giving the team a chance to course-correct
+- **Hard cap** — stops the harness mid-session when the ceiling is reached
+
+Budget enforcement uses the same machinery Terma applies to production tenants, so the limits are reliable rather than advisory.
+
+<CardGroup cols={3}>
+  <Card title="Sessions" icon="messages" href="/concepts/sessions">
+    What a session contains and how to query session data from the CLI.
+  </Card>
+  <Card title="Attribution" icon="code-branch" href="/concepts/attribution">
+    How commit trailers link sessions to git history and the codebase burn map.
+  </Card>
+  <Card title="Entitlements" icon="credit-card" href="/concepts/entitlements">
+    How Terma models subscriptions, metered keys, and prepaid balances across every provider.
+  </Card>
+</CardGroup>

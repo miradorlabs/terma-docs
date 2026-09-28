@@ -1,0 +1,73 @@
+---
+title: "Terma CLI: Query AI Activity from Your Terminal"
+sidebarTitle: "Overview"
+description: "The Terma CLI gives you terminal access to sessions, usage, attribution, and harness management — with JSON output for scripting and pipeline use."
+---
+
+The Terma CLI (`terma`) is a single static binary that lets you query AI activity, manage harnesses, onboard repositories, and inspect sessions directly from your terminal. It covers the full lifecycle: signing in, wiring up agents, stamping commits, and pulling usage data — all scriptable and composable with your existing tooling.
+
+## Command groups
+
+<CardGroup cols={2}>
+  <Card title="Onboarding" icon="rocket" href="/cli/setup">
+    Sign in, connect coding agents (Claude Code, Codex, Cursor, OpenCode), wire repositories for commit stamping, and verify end-to-end coverage.
+  </Card>
+  <Card title="Insights" icon="chart-bar" href="/cli/usage">
+    Query token usage and cost, list and replay sessions, trace git actions, and find principals.
+  </Card>
+  <Card title="Harnesses" icon="plug" href="/cli/harnesses">
+    Connect and disconnect agent harnesses, check harness status, and flush or inspect the event spool.
+  </Card>
+  <Card title="Account" icon="circle-user" href="/cli/account">
+    Log in and out, inspect your credential, switch projects, list organizations, and update the CLI.
+  </Card>
+</CardGroup>
+
+## Output formats
+
+Every command supports the `-o` flag to control output format:
+
+```text
+-o table    # Human-readable table (default in a terminal)
+-o json     # Machine-readable JSON
+-o yaml     # YAML
+-o csv      # Comma-separated values
+```
+
+When the caller is not a terminal — for example, when the output is piped to another command or consumed by a script — the CLI defaults to JSON automatically, so you never need to add `-o json` in CI or automation contexts.
+
+## Help
+
+Every command exposes a `--help` flag that prints its full usage, flags, and examples:
+
+```bash
+terma <command> --help
+```
+
+## Quick reference
+
+| Group | Commands |
+|-------|----------|
+| **Onboarding** | `terma setup`, `terma install`, `terma uninstall`, `terma doctor`, `terma status`, `terma hook <event>` |
+| **Insights** | `terma usage`, `terma session list`, `terma session get`, `terma session events`, `terma session git`, `terma principal find` |
+| **Harnesses** | `terma connect`, `terma disconnect`, `terma harness status`, `terma spool flush`, `terma spool status` |
+| **Account** | `terma login`, `terma logout`, `terma whoami`, `terma project use`, `terma org list`, `terma update` |
+
+## Usage example
+
+The `terma usage` command sums token consumption and cost over a time window, broken down by person, agent, and model:
+
+```bash title="terma usage --since today"
+$ terma usage --since today
+SOURCE       NAME          USER ID           COST USD  INPUT    OUTPUT  CACHE READ  CACHE WRITE  TOTAL TOKENS  MODEL CALLS
+claude-code  Ada           7c5c8f2e1a9b4d03  18.9180   1344655  150364  12977317    439792       14912128      77
+claude-code  Priya         b31e0d9c77a24f18  7.4400    966138   119922  8413746     246140       9745946       86
+codex        Ada           7c5c8f2e1a9b4d03  5.9220    1142646  52872   3672026     0            4867544       37
+opencode     Marco         e9a4c1207d5b3f66  3.6120    492068   57846   3006601     72264        3628779       44
+openrouter   (no user id)                    1.2840    1872240  144066  0           0            2016306       127
+TOTAL                                        37.1760   5817747  525070  28069690    758196       35170703      371
+```
+
+<Note>
+  The CLI is open source. Browse the source at [https://github.com/miradorlabs/terma-cli](https://github.com/miradorlabs/terma-cli).
+</Note>

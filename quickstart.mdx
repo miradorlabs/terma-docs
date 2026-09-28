@@ -1,0 +1,88 @@
+---
+title: "Terma Quickstart: From Sign-Up to Live AI Tracking"
+sidebarTitle: "Quickstart"
+description: "Install the Terma CLI, connect your coding agent, and wire your first repository to start capturing AI activity across your entire team."
+---
+
+This guide walks you through everything you need to go from a fresh signup to live AI activity tracking. By the end, the Terma CLI will be installed on your machine, your coding agent will be connected, and your repository will be wired to stamp commits with session attribution — all in under 10 minutes.
+
+<Steps>
+  <Step title="Create Your Account">
+    Sign up for free at [https://dev.terma.ai/sign-up](https://dev.terma.ai/sign-up). No credit card is required. You can authenticate with GitHub, Google OAuth, or a standard email address.
+
+    Once you're in, Terma creates a default project for you. You can invite teammates and configure additional projects from the dashboard at any time.
+  </Step>
+
+  <Step title="Install the CLI">
+    Choose the installation method that fits your workflow. All three methods download the same release and verify its checksum before completing the install.
+
+    <CodeGroup>
+      ```bash Homebrew
+      brew install miradorlabs/tap/terma
+      ```
+
+      ```bash Install Script
+      curl -fsSL https://get.terma.ai | sh
+      ```
+
+      ```bash npm
+      npm install -g @miradorlabs/terma
+      ```
+    </CodeGroup>
+
+    <Note>
+      Every installation method verifies the release checksum automatically before writing any files to your system.
+    </Note>
+
+    Confirm the install completed successfully:
+
+    ```bash
+    terma --version
+    ```
+  </Step>
+
+  <Step title="Set Up Your Machine">
+    Run `terma setup` to sign in and connect your coding agents. This is a one-time step per developer — it opens a browser-based PKCE sign-in flow, selects your project, binds your identity, and connects any detected agents (Claude Code, Codex, OpenCode).
+
+    ```bash
+    terma setup
+    ```
+
+    Terma walks you through each detected agent interactively. After setup completes, sessions from your coding tools will start flowing to Terma the next time you open an agent.
+  </Step>
+
+  <Step title="Wire Your Repository">
+    From the root of the repository you want to instrument, run `terma install`. Terma opens a pull request that adds git hooks, agent adapters, and a `.terma.toml` configuration file.
+
+    ```bash
+    terma install
+    ```
+
+    Once that PR is merged, every commit an agent session touches will carry a trailer that links the change back to the session — for example:
+
+    ```text
+    feat(billing): prorate invoices on plan change
+
+    Credit the unused portion of the old plan when a customer switches mid-cycle.
+
+    Agent-Session-Id: 018f3a2c-7d4e-7a1b-9c3d-2e5f6a7b8c9d
+    Agent-Tool: claude-code/2.1
+    ```
+
+    Run `terma install` once per repository. Every engineer who has run `terma setup` on their machine is automatically covered.
+  </Step>
+
+  <Step title="Verify Everything Works">
+    Run `terma doctor` to check the full chain end to end. Every check names what it verified, reports its status, and — on failure — tells you the exact command to fix it.
+
+    ```bash
+    terma doctor
+    ```
+
+    Terma also predicts your attribution coverage based on what's connected, so you can see any gaps before they show up in your reports.
+  </Step>
+</Steps>
+
+<Tip>
+  Run `terma usage --since today` to see token spend and cost as soon as your first session lands. No waiting — activity appears in real time.
+</Tip>

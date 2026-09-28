@@ -1,0 +1,85 @@
+---
+title: "Codebase Burn Map: AI File Activity and Hotspot Findings"
+sidebarTitle: "Burn Map"
+description: "Terma's burn map turns your repository into a living view of AI activity — revealing files with repeated reads, retry loops, and concentrated spend."
+---
+
+The burn map shows where AI-assisted work lands in your codebase. Rather than aggregating activity into a single number, it lays out your repository tree and colors every file by how much AI attention it has received — giving you an immediate spatial sense of where sessions concentrate, where context re-reads pile up, and where spend is quietly accumulating.
+
+## What the Burn Map Shows
+
+Each file in your repository appears as a cell, sized by its relative activity and colored on a cold-to-hot scale:
+
+- **Cold (blue/grey)** — rarely or never touched by AI sessions
+- **Warm (yellow/amber)** — moderate activity; some reads or edits
+- **Hot (orange/red)** — high activity; many reads, frequent edits, or repeated sessions
+
+Click any file to open its detail panel, which shows:
+
+- **Reads** — how many times the file was read across all sessions
+- **Edits** — how many times the file was modified
+- **Sessions** — which sessions touched this file and when
+- **Trend** — activity over time, so you can see whether attention is growing or fading
+
+## Reading the Map
+
+Hot files are not necessarily a problem — a core module that many features depend on will naturally attract AI attention. The map becomes most useful when you look for **patterns**:
+
+- **Re-read hotspots** — files that sessions read repeatedly within a single run often signal missing documentation. Every agent that lacks a summary of the module reads the source instead.
+- **Isolated hot spots** — a single file with high activity surrounded by cold neighbors can indicate a deep bug, a brittle interface, or a design that is harder to work with than it appears.
+- **Cold coverage gaps** — areas of the codebase that AI sessions never touch may not be covered by your agent workflows at all.
+
+## Findings Surfaced from the Burn Map
+
+Terma analyzes activity patterns across sessions and surfaces specific findings below the map. Three common finding types:
+
+### Re-read Hotspots
+
+A re-read hotspot flags a file that is read multiple times per session on average. For example:
+
+> **api-client.ts** is re-read 4.2× per session — nothing summarizes the module.
+> Estimated weekly cost from repeated reads: **€310**
+
+The finding links to the affected sessions and suggests drafting a summary document so future sessions can load context from a compact description rather than re-reading the full source.
+
+### Retry-Loop Sessions
+
+Sessions that cluster around a particular file or test suite and show repeated tool-call patterns without making forward progress. These often correspond to flaky CI, an underspecified task, or a test that the model cannot reliably satisfy. The finding lists the sessions involved and the file or test path at the center of the loop.
+
+### Session-Efficiency Patterns
+
+Findings that compare working patterns across sessions — for example, sessions that start with an explicit plan use significantly fewer tokens than equivalent sessions that do not. These findings surface where a repeatable change in how engineers structure their sessions could reduce cost across similar tasks. Each finding shows the session count and task class used to calculate the comparison so you can judge whether it applies to your context.
+
+## Time Range and Filters
+
+Use the controls above the map to adjust what you see:
+
+- **Date range** — set a start and end date, or choose a preset (last 7 days, last 30 days, this quarter)
+- **Provider / harness** — limit the view to activity from a specific integration (Claude Code, Codex, Cursor, OpenCode, OpenRouter)
+- **Person or team** — filter to a single engineer or a team alias to see only their sessions' footprint
+
+## Codebase Attribution Table
+
+Below the map, the attribution table ranks repository areas by spend and session count. Each row represents a directory or area of the codebase:
+
+| Area | Spend | Sessions |
+|---|---|---|
+| src/lib | €148.20 | 94 |
+| tests/e2e | €87.60 | 61 |
+| workloads/support | €54.30 | 38 |
+
+Click any row to filter the map to that area and see which specific files are driving the spend.
+
+## Acting on Findings
+
+Every finding in the panel includes:
+
+- The **sessions** involved, with links to their replay views
+- The **files** at the center of the pattern
+- A **suggested action** — for example, "Draft summary doc for api-client.ts", "Open fix PR for flaky test", or "Set plan default for this area"
+
+Findings are not alerts that require resolution; they are starting points for decisions. You can dismiss a finding if it reflects intentional behavior, or act on it to reduce future spend.
+
+<Tip>
+After resolving a re-read hotspot by adding a summary document, watch the burn map over the following week to confirm that per-session reads on that file fall. The trend line in the file detail panel makes this easy to verify.
+</Tip>

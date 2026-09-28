@@ -1,0 +1,62 @@
+---
+title: "terma spool: Inspect and Flush the Local Event Queue"
+sidebarTitle: "terma spool"
+description: "terma spool flush and spool status let you inspect and force delivery of queued session events that the background flush delivers to Terma with backoff."
+---
+
+Post-commit hooks append events to a local spool file rather than making a live network call. A background process then delivers those events to Terma with exponential backoff, so activity data reaches the dashboard even when connectivity is intermittent. The `terma spool` commands let you inspect the queue and force immediate delivery when you need events to appear right away.
+
+## How Spooling Works
+
+Understanding the spool lifecycle helps you diagnose gaps in the dashboard and resolve delivery issues quickly.
+
+<Steps>
+  <Step title="Event appended">
+    When a `post-commit` hook fires, it writes a spool event to the local queue. No network call is made at this point, so commit performance is never affected by network conditions.
+  </Step>
+  <Step title="Background delivery">
+    A background flush process picks up queued events and delivers them to Terma. If a delivery attempt fails, the process retries with exponential backoff and leaves the event in the queue until it succeeds.
+  </Step>
+  <Step title="Confirmation">
+    Once Terma acknowledges an event, it is removed from the spool. The session and commit data become visible in the dashboard.
+  </Step>
+</Steps>
+
+<Note>
+The post-commit hook never blocks on Terma being reachable. Commit performance is not affected by network conditions.
+</Note>
+
+## terma spool status
+
+Show what is currently queued and when the last delivery attempt was made.
+
+```bash
+terma spool status
+```
+
+The output includes:
+
+| Field | Description |
+|---|---|
+| Pending Events | Number of events waiting to be delivered |
+| Oldest Event | Age of the oldest undelivered event |
+| Last Attempt | Timestamp of the most recent delivery attempt |
+
+## terma spool flush
+
+Force immediate delivery of all queued events to Terma, bypassing the backoff schedule.
+
+```bash
+terma spool flush
+```
+
+Use `terma spool flush` after a prolonged outage, after restoring network connectivity, or when you want commits to appear in the dashboard without waiting for the next automatic delivery window.
+
+```bash title="Check the queue then flush it"
+terma spool status
+terma spool flush
+```
+
+<Tip>
+If events are stuck in the spool, run `terma doctor` — it checks connectivity and shows the exact fix command.
+</Tip>

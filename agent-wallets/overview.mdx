@@ -1,0 +1,58 @@
+---
+title: "Agent Wallets: Track Autonomous AI Spend with x402"
+sidebarTitle: "Overview"
+description: "Fund agent wallets from an org treasury, set refill policies and hard ceilings, and attribute every x402 on-chain payment to the tool call that claimed it."
+---
+
+Autonomous AI agents increasingly pay for external services on-chain via x402 — search APIs, media generation, data services, and more. Rather than treating these payments as a separate concern, Terma brings them into the same attributed ledger as your token spend, sessions, and git activity. You get a single view of what every agent cost, what it touched, and whether the money moved as expected.
+
+## How Agent Wallets Work
+
+Each agent gets a dedicated wallet address funded from your organization's treasury. The treasury governs how wallets are topped up and how much any single wallet can hold.
+
+- **Funding source** — all wallets draw from a shared org treasury, keeping your spend consolidated in one place.
+- **Refill policy** — configure nightly, on-demand, or threshold-triggered refills so wallets stay funded without manual intervention.
+- **Hard ceiling per wallet** — each wallet has a cap. When an agent reaches its ceiling, new payments are blocked until you explicitly raise the limit or approve an exception.
+- **Per-payment attribution** — every x402 on-chain payment is reconciled against the exact tool call that claimed it. You can trace any charge back to a session, a principal, and a line of agent work.
+- **Gap detection** — unattributed outflows (payments with no matching tool call) and claimed-vs-settled discrepancies are flagged as findings, not buried in aggregate totals.
+
+## What Terma Does Not Do
+
+Terma never holds private keys. Wallet metadata and settlement data flow through Terma for attribution and reconciliation; your keys remain in your own infrastructure. Terma sees what was spent and when — not the credentials that authorized it.
+
+## Wallet Registration States
+
+Every wallet address Terma encounters falls into one of three states:
+
+| State | Meaning |
+|---|---|
+| **Registered** | Explicitly added to your treasury with an owner, cap, and refill policy |
+| **Inferred** | Address seen in agent traffic but not yet registered; treated as a governance finding |
+| **Refill pending** | Registered wallet that has dropped below its target balance and is awaiting the next scheduled refill |
+
+<Note>
+Unregistered wallet addresses inferred from traffic appear as governance findings. Register them in Dashboard → Agent Wallets to bring them under your treasury.
+</Note>
+
+## Treasury Management
+
+Fund wallets from the org treasury and set the policies that govern their behavior:
+
+- **Per-wallet caps** — define the maximum balance any single wallet can hold.
+- **Auto-refill target** — set the balance level that triggers a refill, and the amount to restore.
+- **Approvals above cap** — any transaction that would exceed the wallet ceiling requires explicit approval before it proceeds.
+
+This gives you budget guardrails for autonomous agents that mirror the same envelope machinery Terma uses for dev-time and run-time budgets across teams and repos.
+
+## Wallet Table Example
+
+The Dashboard → Agent Wallets view lists every wallet Terma has seen, along with its current state and cap:
+
+| Name | Address | Status | Spend (mo) | Cap |
+|---|---|---|---|---|
+| nightly-refactor | 0x93aA…04C1 | Registered | $0.00 | $60 |
+| pr-reviewer | 0xB2e0…5D19 | Registered | $0.00 | $30 |
+| ci-triage | 0x40C7…E83a | Refill pending | $0.00 | $20 |
+| 0x8d21… | *(unclaimed)* | Inferred owner | $0.00 | — |
+
+The inferred row for `0x8d21…` will surface as a finding until you register it and assign it an owner and cap.

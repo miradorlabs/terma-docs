@@ -1,0 +1,56 @@
+---
+title: "terma doctor: Verify Your Terma Setup End to End"
+sidebarTitle: "terma doctor"
+description: "terma doctor runs a scratch commit in a temporary worktree to verify that hooks, harnesses, and attribution are working — and shows the coverage percentage."
+---
+
+Run `terma doctor` after setup, after merging a `terma install` PR, or any time you want to confirm the full attribution chain is working. It steps through every link from machine auth to dashboard attribution, names exactly what it checked, and — on any failure — tells you the one command that fixes it.
+
+## What it does
+
+`terma doctor` runs a series of checks in sequence. For each check it reports the name of what was verified and a pass or fail result. On failure, the output includes both what went wrong and the exact CLI command to resolve it.
+
+At the end, `terma doctor` runs a **scratch commit** in a temporary worktree. The scratch commit exercises the full hook pipeline — `prepare-commit-msg` appends the session trailer, `post-commit` spools the event, and Terma confirms the attribution landed in the dashboard. Each hook is a one-liner that calls `terma hook <event>`, so all logic lives in the binary and stays up to date when you run `terma update`. The final line shows the **coverage percentage**: the share of commits Terma expects to attribute based on your current configuration, calculated before any real commit lands.
+
+## Usage
+
+```bash
+terma doctor
+```
+
+## Checks performed
+
+- **Machine is signed in** — Verifies a valid credential exists on this machine. Fix: `terma login`
+- **Project is selected** — Confirms a project is set for subsequent commands. Fix: `terma project use`
+- **At least one harness is connected** — Checks that one or more agent integrations are active. Fix: `terma harness status` to see what is connected, then `terma connect` to add one
+- **Repository hooks are installed and executable** — Verifies `prepare-commit-msg` and `post-commit` exist in `.git/hooks` (or your hook manager) and have executable permissions. Fix: `terma install`
+- **prepare-commit-msg produces correct trailers** — Runs the hook against a synthetic commit message and checks that `Agent-Session-Id` and `Agent-Tool` trailers appear in the output
+- **post-commit delivers events to the spool** — Confirms the hook writes events to the local spool without error
+- **Spool can reach Terma** — Makes an outbound connectivity check to the Terma ingest endpoint. Fix: check network or proxy settings, then `terma spool flush`
+- **Scratch commit attribution appears in the dashboard** — Creates a real commit in a throwaway worktree, spools its events, and waits for the dashboard to confirm attribution landed
+
+## Coverage figure
+
+After all checks pass, `terma doctor` prints the **coverage percentage** — an estimate of how many of your future commits Terma will be able to attribute, given the harnesses and hooks currently configured. A higher number means more of your team's AI activity will appear in usage reports and the burn map.
+
+## Failure output
+
+When a check fails, the output follows a consistent format:
+
+```text
+✗  prepare-commit-msg produces correct trailers
+   The hook ran but no Agent-Session-Id trailer was found in the output.
+   Fix: terma install --dry-run to inspect the hook, then terma install to reinstall.
+```
+
+Every failing check includes the check name, a plain-English description of what was missing, and the exact command to run.
+
+<Note>
+  Run `terma doctor` any time you change your hook setup, upgrade the CLI, or add a new harness. It is safe to run repeatedly — the scratch commit lands in a temporary worktree and is discarded automatically.
+</Note>
+
+For a lighter-weight check that does not run a scratch commit, use `terma status`. It shows which agents and harnesses are connected, what is queued in the spool, and the predicted coverage without exercising the full hook pipeline.
+
+```bash
+terma status
+```

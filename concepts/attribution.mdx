@@ -1,0 +1,83 @@
+---
+title: "AI Change Attribution: Sessions to Commits and PRs"
+sidebarTitle: "Attribution"
+description: "Terma links AI sessions to git commits via commit trailers, so every merged change carries the sessions, tool calls, and cost that produced it."
+---
+
+Capturing AI sessions is only half the picture. The other half is knowing which sessions contributed to the code that actually shipped. Terma closes this loop through git commit trailers — lightweight, human-readable annotations appended directly to commit messages. Every merged commit that involved AI assistance carries the session IDs and agent identifiers that produced it, preserved in the git history where any tool can read them.
+
+## How commit trailers work
+
+When you run `git commit`, Terma's `prepare-commit-msg` hook fires automatically. The hook reads the local spool manifest — a file written by the harness as the session ran — and intersects the set of files staged for the commit against the files each session touched. For every session that overlaps with the staged files, the hook appends an `Agent-Session-Id` and `Agent-Tool` trailer pair to the commit message.
+
+If the commit contains only your own edits with no AI session overlap, the hook exits without modifying anything. Merge commits and squash commit messages are never touched.
+
+The hook reads local manifests only and makes no network calls, so it completes in under 50 milliseconds regardless of network conditions.
+
+## Commit message format
+
+A commit with AI attribution looks like this:
+
+```text title="Example commit with session trailers"
+feat(billing): prorate invoices on plan change
+
+Credit the unused portion of the old plan when a customer switches mid-cycle.
+
+Agent-Session-Id: 018f3a2c-7d4e-7a1b-9c3d-2e5f6a7b8c9d
+Agent-Tool: claude-code/2.1
+```
+
+The trailers follow the standard git trailer format (key: value, separated from the body by a blank line), which means `git log --format` and tools like GitHub's API can parse them without any Terma-specific tooling.
+
+## Multiple sessions in one commit
+
+A single commit can incorporate work from several AI sessions — for example, if you used Claude Code to draft a function and then used Codex to write the tests in the same branch. In that case, the hook appends one trailer pair per contributing session:
+
+```text title="Commit with multiple session trailers"
+feat(auth): add PKCE flow for OAuth clients
+
+Agent-Session-Id: 018f3a2c-7d4e-7a1b-9c3d-2e5f6a7b8c9d
+Agent-Tool: claude-code/2.1
+Agent-Session-Id: 019a4b1d-8e5f-7b2c-0d4e-3f6a7b8c9d0e
+Agent-Tool: codex/1.0
+```
+
+Each session is attributed independently, so Terma can show the full breakdown of which agent contributed which files and at what cost.
+
+## Codebase burn map
+
+Once attribution data accumulates across commits, Terma builds a codebase burn map: a repository-level view showing AI activity by file. The burn map highlights:
+
+- **Hotspots** — files re-read by agents in session after session, often a sign of ambiguous interfaces or missing documentation
+- **Retry loops** — areas where agents repeatedly attempted the same edit, indicating brittle or unclear code
+- **Concentrated activity** — files that account for a disproportionate share of total token spend
+
+Every pattern in the burn map links back to the sessions and commits behind it, so you can open the raw conversation to understand why the agent struggled.
+
+## Change context
+
+For every merged pull request or commit, Terma surfaces:
+
+- The AI sessions that contributed to it
+- Total tool calls and token cost across those sessions
+- Attribution score (proportion of changed lines touched by an attributed session)
+- Review rounds and CI retry counts
+- Links back to each originating session for full replay
+
+This gives reviewers and engineering leads a complete picture of how a change was produced, not just what it contains.
+
+## Predicting coverage
+
+Before any real commit lands, you can check how much of your activity Terma will be able to attribute. Run `terma doctor` to verify the full chain end to end and get a predicted coverage percentage based on what is currently connected:
+
+```bash
+terma doctor
+```
+
+<Tip>
+  Run `terma doctor` after wiring a new repository with `terma install` to confirm the hook is installed correctly and attribution is ready to capture the next commit.
+</Tip>
+
+<Note>
+  `terma install` wires the `prepare-commit-msg` hook by opening a pull request against your repository. Once merged, all subsequent commits from connected sessions are automatically annotated.
+</Note>

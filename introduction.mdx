@@ -1,0 +1,50 @@
+---
+title: "Terma: AI Activity Observability"
+sidebarTitle: "Introduction"
+description: "Terma connects your team's coding harnesses, providers, and repositories into one attributed view — tracking sessions, token spend, and change attribution."
+---
+
+Terma gives engineering teams a single place to see what their AI coding tools are actually doing. It captures sessions from agents like Claude Code, Codex, and Cursor; attributes every token to a person, project, and git change; and surfaces patterns — hotspots, retry loops, redundant spend — so you can act on them. Whether you're managing a small team or a large organization with multiple providers and repositories, Terma turns AI activity into something you can measure, budget, and improve.
+
+<CardGroup cols={2}>
+  <Card title="Quickstart" icon="rocket" href="/quickstart">
+    Install the CLI, connect your agent, and wire your first repository in under 10 minutes.
+  </Card>
+  <Card title="Concepts Overview" icon="map" href="/concepts/overview">
+    Learn how sessions, principals, commit trailers, and findings fit together.
+  </Card>
+  <Card title="Claude Code Integration" icon="plug" href="/integrations/claude-code">
+    Connect Claude Code via hooks and start capturing sessions with full attribution.
+  </Card>
+  <Card title="CLI Reference" icon="terminal" href="/cli/overview">
+    Explore every Terma CLI command — from setup and install to usage and sessions.
+  </Card>
+</CardGroup>
+
+## How It Works
+
+Terma's setup follows three steps that take you from zero to full attribution coverage.
+
+<Steps>
+  <Step title="METER — Connect Your AI Tools">
+    Run `terma setup` to sign in and bind your coding agents. Terma hooks into Claude Code, Codex, Cursor, OpenCode, and other providers to capture sessions, token spend, and tool call events as they happen.
+  </Step>
+  <Step title="LINK — Connect Your Repositories">
+    Run `terma install` from any repository root. Terma opens a pull request that adds git hooks, agent adapters, and a `.terma.toml` config file. Once merged, every commit stamped by an agent session carries a trailer that links the code change back to the session that produced it.
+  </Step>
+  <Step title="WATCH — See Patterns and Act">
+    Findings surface automatically: file-level burn maps show which parts of your codebase consume the most AI activity, retry loops flag repeated work, and attribution gaps highlight spend that isn't tied to a person or project. Budgets and Slack notifications let you set guardrails before problems compound.
+  </Step>
+</Steps>
+
+## Supported Tools
+
+Terma integrates with the AI coding tools and providers your team already uses.
+
+<Note>
+  **Coding agents:** Claude Code, Codex, Cursor, OpenCode
+
+  **Providers and gateways:** OpenRouter, Anthropic SDK, OpenAI SDK, xAI, Vercel AI Gateway, Cloudflare AI
+
+  New integrations are added regularly. Check the [integrations section](/integrations) for the latest setup guides.
+</Note>

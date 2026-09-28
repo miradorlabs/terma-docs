@@ -1,0 +1,126 @@
+---
+title: "terma session: List, Inspect, and Replay AI Sessions"
+sidebarTitle: "terma session"
+description: "terma session list, get, events, and git let you browse, inspect, and replay individual AI coding sessions from the terminal with full tool-call detail."
+---
+
+The `terma session` subcommands give you full access to individual sessions from the terminal. You can list sessions by person or time window, pull a cost and token roll-up for a single session, replay every tool call in order, and see exactly which commits and pull requests a session produced.
+
+## terma session list
+
+List sessions for your project, most recently active first. Filter by user, time window, agent source, or model to narrow the results.
+
+**Usage**
+
+```bash
+terma session list [flags]
+```
+
+**Flags**
+
+<ParamField query="--user" type="string">
+  Filter to sessions owned by a specific person. Matches name, email, alias, or user ID.
+</ParamField>
+
+<ParamField query="--since" type="string">
+  Show sessions active after this time. Accepts RFC 3339, a date, a relative age (`24h`, `7d`), or `today` / `yesterday`.
+</ParamField>
+
+<ParamField query="--source" type="string">
+  Filter by agent source — for example `claude-code`, `codex`, or `opencode`.
+</ParamField>
+
+<ParamField query="--model" type="string">
+  Filter by model name.
+</ParamField>
+
+<ParamField query="-o" type="string">
+  Output format: `table` (default), `json`, `yaml`, `csv`.
+</ParamField>
+
+**Example**
+
+```bash
+terma session list --user dawson --since yesterday
+```
+
+---
+
+## terma session get
+
+Show the roll-up for a single session: cost, token counts, model used, number of files touched, and high-level stats.
+
+**Usage**
+
+```bash
+terma session get <routing-key>
+```
+
+---
+
+## terma session events
+
+Replay a session's events in the order they occurred — prompts, tool calls, responses, and errors. Use `--tools-only` to focus on tool calls without the surrounding conversation, or `--errors-only` to surface failures quickly.
+
+**Usage**
+
+```bash
+terma session events <routing-key> [flags]
+```
+
+**Flags**
+
+<ParamField query="--source" type="string">
+  Specify the agent source to disambiguate when a routing key appears in more than one harness.
+</ParamField>
+
+<ParamField query="--tools-only" type="flag">
+  Show only tool-call events, hiding prompts and plain responses.
+</ParamField>
+
+<ParamField query="--errors-only" type="flag">
+  Show only events that resulted in an error or non-success status.
+</ParamField>
+
+**Examples**
+
+```bash
+# Replay only tool calls from a Claude Code session
+terma session events <routing-key> --source claude-code --tools-only
+```
+
+<Tip>
+  When the output of `terma session events` is piped to a file or another command, the CLI switches to JSON automatically — no `-o json` flag needed.
+</Tip>
+
+---
+
+## terma session git
+
+Show the git and GitHub actions a session performed: commits created, pull requests opened or commented on, and files staged during the session.
+
+**Usage**
+
+```bash
+terma session git <routing-key> [flags]
+```
+
+**Flags**
+
+<ParamField query="--source" type="string">
+  Specify the agent source.
+</ParamField>
+
+**Example**
+
+```bash
+terma session git <routing-key> --source claude-code
+```
+
+The output lists each commit SHA and message, any PRs opened or updated, and the files that were staged or modified during the session.
+
+---
+
+<Note>
+  The `<routing-key>` is the session identifier shown in the `ID` column of `terma session list` output. You can also copy it from the session URL in the Terma dashboard.
+</Note>

@@ -1,0 +1,80 @@
+---
+title: "terma install: Wire a Repository for Commit Attribution"
+sidebarTitle: "terma install"
+description: "terma install wires a repository by writing commit hooks, agent adapters, and .terma.toml into a pull request — onboarding the whole team with one merge."
+---
+
+Run `terma install` from the root of a repository to bind it to your Terma project. The command writes commit hooks, agent adapter files, and a `.terma.toml` config, then packages everything into a pull request for your team to review. Once the PR merges, every engineer who pushes commits gets session attribution automatically — no extra steps required per person.
+
+## What it does
+
+`terma install` inspects your repository, determines what needs to be added, and then:
+
+1. **Binds the repo** — Writes `.terma.toml` with your project ID and repo-level config.
+2. **Installs commit hooks** — Adds a `prepare-commit-msg` hook that appends `Agent-Session-Id` and `Agent-Tool` trailers to each commit, and a `post-commit` hook that spools events for delivery to Terma.
+3. **Writes agent adapter files** — Drops adapter config for each harness connected on your machine.
+4. **Opens a pull request** — All changes land in a PR, not directly on your default branch. Your team reviews and merges at their own pace.
+
+Before writing anything, `terma install` shows you the full plan so you can confirm the changes.
+
+## Usage
+
+```bash
+# Run from the repository root
+terma install
+```
+
+## Flags
+
+<ParamField query="--project" type="string">
+  Specify the Terma project to bind this repository to, skipping the interactive prompt.
+</ParamField>
+
+<ParamField query="--dry-run" type="flag">
+  Preview the full PR diff without opening a pull request or writing any files. Use this to audit what will change before committing.
+</ParamField>
+
+## What gets written
+
+| File / hook | Purpose |
+|---|---|
+| `.terma.toml` | Repo binding — project ID, config, and harness hints |
+| `prepare-commit-msg` | Appends `Agent-Session-Id` and `Agent-Tool` trailers to every commit |
+| `post-commit` | Spools attribution events and queues them for delivery to Terma |
+| Agent adapter files | Per-harness config for each connected agent (Claude Code, Codex, etc.) |
+
+<Note>
+  If your repository uses husky, lefthook, or another hook manager, `terma install` detects it and integrates through that manager's config files rather than writing directly to `.git/hooks`.
+</Note>
+
+Every hook and adapter file is a one-liner that calls `terma hook <event>`. All attribution logic lives inside the `terma` binary — the committed files never need to change when you update the CLI, so a `terma update` on each developer's machine is all that is needed to pick up new behaviour.
+
+## No secrets in the repo
+
+`terma install` never writes credentials, tokens, or API keys into the repository. The PR contains only hook scripts, adapter configs, and `.terma.toml`. It is safe to review publicly, merge to open-source repos, and check in to version control.
+
+## One PR, whole team
+
+After the PR merges, every engineer who commits to the repo gets attribution traced back to their sessions — no per-person repository setup required. Individual developers still run `terma setup` on their own machines to bind their identities and connect their local agents.
+
+## After merging
+
+Once the PR merges, confirm the repository is wired correctly:
+
+```bash
+# Show what is connected, queued, and predicted coverage
+terma status
+
+# Run end-to-end checks including a scratch commit
+terma doctor
+```
+
+## Removing
+
+To undo everything `terma install` wrote:
+
+```bash
+terma uninstall
+```
+
+`terma uninstall` removes `.terma.toml`, the commit hooks, and all agent adapter files that `terma install` created. It does not touch any files your team added after the merge.

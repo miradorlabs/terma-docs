@@ -1,0 +1,123 @@
+{
+  "$schema": "https://mintlify.com/docs.json",
+  "theme": "luma",
+  "name": "Terma",
+  "colors": {
+    "primary": "#6347e0",
+    "light": "#ffffff"
+  },
+  "favicon": "/favicon.svg",
+  "logo": {
+    "light": "/logo/light.svg",
+    "dark": "/logo/dark.svg"
+  },
+  "navbar": {
+    "links": [
+      {
+        "label": "Support",
+        "href": "mailto:hello@terma.ai"
+      }
+    ],
+    "primary": {
+      "type": "button",
+      "label": "Sign Up Free",
+      "href": "https://dev.terma.ai/sign-up"
+    }
+  },
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Get Started",
+            "pages": [
+              "introduction",
+              "quickstart",
+              "account-setup"
+            ]
+          },
+          {
+            "group": "Core Concepts",
+            "pages": [
+              "concepts/overview",
+              "concepts/sessions",
+              "concepts/attribution",
+              "concepts/entitlements"
+            ]
+          },
+          {
+            "group": "Integrations",
+            "pages": [
+              "integrations/claude-code",
+              "integrations/codex",
+              "integrations/cursor",
+              "integrations/opencode",
+              "integrations/openrouter"
+            ]
+          },
+          {
+            "group": "Dashboard",
+            "pages": [
+              "dashboard/session-replay",
+              "dashboard/burn-map",
+              "dashboard/breakdowns",
+              "dashboard/budgets",
+              "dashboard/production"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "CLI Reference",
+        "groups": [
+          {
+            "group": "Overview",
+            "pages": [
+              "cli/overview",
+              "cli/installation"
+            ]
+          },
+          {
+            "group": "Onboarding Commands",
+            "pages": [
+              "cli/setup",
+              "cli/install",
+              "cli/doctor"
+            ]
+          },
+          {
+            "group": "Insight Commands",
+            "pages": [
+              "cli/usage",
+              "cli/sessions",
+              "cli/principals"
+            ]
+          },
+          {
+            "group": "Harness Commands",
+            "pages": [
+              "cli/harnesses",
+              "cli/spool"
+            ]
+          },
+          {
+            "group": "Account Commands",
+            "pages": [
+              "cli/account",
+              "cli/project"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "footer": {
+    "socials": {
+      "github": "https://github.com/miradorlabs"
+    }
+  },
+  "appearance": {
+    "default": "light"
+  }
+}

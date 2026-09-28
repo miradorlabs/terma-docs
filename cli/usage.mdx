@@ -1,0 +1,67 @@
+---
+title: "terma usage: Summarise Token Usage and Cost by Team"
+sidebarTitle: "terma usage"
+description: "terma usage sums token usage and cost over a time window, grouped by person, agent, model, or provider. Key flags: --since, --until, --user, --group."
+---
+
+Use `terma usage` to get a cost and token summary for any time window across your entire team or filtered down to a single person. The output breaks usage out by source, person, and model — with a totals row at the bottom — so you can see at a glance where spend is going and who is driving it.
+
+## Usage
+
+```bash
+terma usage [flags]
+```
+
+## Output
+
+Each row represents one (source, person) combination. Columns cover cost in USD, token counts by type, and the number of model calls made. A `TOTAL` row summarises the full window.
+
+```bash title="terma usage --since today"
+$ terma usage --since today
+SOURCE       NAME          USER ID           COST USD  INPUT    OUTPUT  CACHE READ  CACHE WRITE  TOTAL TOKENS  MODEL CALLS
+claude-code  Ada           7c5c8f2e1a9b4d03  18.9180   1344655  150364  12977317    439792       14912128      77
+claude-code  Priya         b31e0d9c77a24f18  7.4400    966138   119922  8413746     246140       9745946       86
+codex        Ada           7c5c8f2e1a9b4d03  5.9220    1142646  52872   3672026     0            4867544       37
+opencode     Marco         e9a4c1207d5b3f66  3.6120    492068   57846   3006601     72264        3628779       44
+openrouter   (no user id)                    1.2840    1872240  144066  0           0            2016306       127
+TOTAL                                        37.1760   5817747  525070  28069690    758196       35170703      371
+```
+
+## Flags
+
+<ParamField query="--user" type="string">
+  Filter results to one person. Matches against name, email, alias, or user ID. A single `--user` match covers every agent and source the person uses — Claude Code, Codex, and OpenCode rows are all included if they share an identity.
+</ParamField>
+
+<ParamField query="--since" type="string">
+  Start of the time window. Accepts an RFC 3339 timestamp, a date (`2024-06-01`), a relative age (`24h`, `7d`), or the keywords `today` and `yesterday`.
+</ParamField>
+
+<ParamField query="--until" type="string">
+  End of the time window. Accepts the same formats as `--since`. Defaults to now when omitted.
+</ParamField>
+
+<ParamField query="--group" type="string">
+  Regroup rows by a different dimension. Options: `user`, `model`, `source`, `provider`, `api-key`.
+</ParamField>
+
+<ParamField query="-o" type="string">
+  Output format. Options: `table` (default), `json`, `yaml`, `csv`. Non-terminal callers (scripts, CI) receive JSON automatically.
+</ParamField>
+
+<Note>
+  A `--user` match for a name or email covers every agent the person uses. One person is often several principals — the same developer may appear as separate identities seen by Claude Code and by Codex — and `terma usage` aggregates them all under a single row when a match is found.
+</Note>
+
+<Note>
+  Traffic attributed to an API key rather than a named person shows as `(no user id)`. Use `--group api-key` to see a breakdown by key, and `terma principal find` to investigate which identity is missing.
+</Note>
+
+## Related commands
+
+Use `terma session list` to drill into the individual sessions behind the numbers in a usage summary.
+
+```bash
+# All sessions for a user since yesterday
+terma session list --user dawson --since yesterday
+```

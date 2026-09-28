@@ -1,0 +1,78 @@
+---
+title: "Connect Cursor to Terma for IDE Session Tracking"
+sidebarTitle: "Cursor"
+description: "Wire Cursor and Cursor Agent to Terma using hooks.json for session and file events, with spend arriving via the Cursor Enterprise export."
+---
+
+Cursor sessions — both interactive IDE sessions and cursor-agent runs — surface in Terma as first-class activity. Hook events capture session boundaries and file edits on all Cursor plans, while the Cursor Enterprise export adds token counts and cost to complete the picture.
+
+## How it works
+
+Terma registers three hooks in `.cursor/hooks.json`:
+
+- **sessionStart** — opens a Terma session record when Cursor begins a coding session
+- **afterFileEdit** — fires after each file is modified, forwarding the file path to Terma for attribution
+- **sessionEnd** — closes the session record and flushes buffered events
+
+Spend data — token counts and USD cost — arrives separately through the Cursor Enterprise telemetry export, which `terma setup` points at Terma's OTEL ingest endpoint. The two streams are joined on session ID automatically.
+
+## Requirements
+
+| Feature | Plan required |
+|---|---|
+| Session tracking and file attribution | All Cursor plans |
+| Token counts and spend data | Cursor Enterprise |
+
+<Info>
+  On non-Enterprise plans, Cursor sessions appear in attribution and file activity but cost figures are not available.
+</Info>
+
+## Setup
+
+Run `terma setup` once per developer machine. It writes `.cursor/hooks.json` and configures the OTEL export endpoint if you are on Cursor Enterprise.
+
+```bash
+terma setup
+```
+
+After setup, your `.cursor/hooks.json` will contain:
+
+```json .cursor/hooks.json
+{
+  "hooks": [
+    { "event": "sessionStart", "command": "terma hook session-start" },
+    { "event": "afterFileEdit", "command": "terma hook post-tool-use" },
+    { "event": "sessionEnd", "command": "terma hook session-end" }
+  ]
+}
+```
+
+## Enterprise export
+
+If you are on a Cursor Enterprise plan, `terma setup` automatically configures Cursor to export telemetry to Terma's OpenTelemetry endpoint. You can also set this manually in **Cursor Settings → Telemetry → Export endpoint**. Once configured, token usage and cost flow into Terma alongside hook events, giving you full spend visibility per session and per user.
+
+## What's captured
+
+| Signal | Plan required |
+|---|---|
+| Session start and end timestamps | All plans |
+| Files edited per session | All plans |
+| Commit attribution from file edits | All plans |
+| Token usage (input, output, cache) | Enterprise |
+| Cost per session | Enterprise |
+
+## Verifying the connection
+
+After running `terma setup`, confirm that Cursor is wired correctly:
+
+```bash
+terma harness status
+```
+
+Cursor should appear as connected. Run a deeper end-to-end check with:
+
+```bash
+terma doctor
+```
+
+`terma doctor` verifies that session hooks are firing, that file edit events are reaching Terma, and — on Enterprise plans — that the OTEL export is reachable and delivering spend data. Any gaps appear as actionable findings.
