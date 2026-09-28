@@ -1,74 +1,114 @@
 ---
-title: "Manage Agent Harness Connections with terma connect"
-sidebarTitle: "Harnesses"
-description: "terma connect, terma disconnect, and terma harness status manage which coding agents export session events to Terma, with per-source control via --source."
+title: "Agent connections: terma connect, disconnect, and harness"
+sidebarTitle: "Agent connections"
+description: "Advanced commands to connect a coding agent's telemetry to Terma machine-wide, inspect what each agent is configured to send, and see what Terma supports."
 ---
 
-A harness is a connected coding agent — Claude Code, Codex, Cursor, or OpenCode — that exports session events to Terma. The harness commands let you add, remove, and inspect those connections so you control exactly which agents contribute to your activity feed.
+A harness is a coding agent Terma integrates with — Claude Code, Codex, OpenCode, Cursor, or Antigravity. [`terma install`](/cli/install) configures your agents per repository, and that is the path most people need. The commands on this page are advanced: they are hidden from `terma --help` but fully supported for automation, troubleshooting, and machine-wide setups.
+
+## terma harness list
+
+Shows which coding agents Terma supports and how completely. A bare `terma harness` does the same.
+
+```bash
+terma harness list [claude|codex|opencode|cursor|antigravity]
+```
+
+Two capabilities are reported per agent:
+
+- **Attribution** — stamping commits with the session and tool that produced them
+- **Telemetry** — exporting usage so `terma usage` and `terma session` can report spend and cost
+
+| Harness | Attribution | Telemetry | Notes |
+|---|---|---|---|
+| Claude Code | full | full | |
+| Codex | full | full | Codex's native export is machine-wide; `terma install` routes it per repository at launch |
+| OpenCode | full | full | |
+| Cursor | full | partial | Ordered hook observations, every tool call, and optional token snapshots; plan, quota, and billed cost are unavailable |
+| Antigravity | full | partial | Hooks only: model, turns, and tool steps; no token counts or cost |
+
+This is what Terma can do, not what is wired up on your machine. For that, use `terma harness status`.
+
+## terma harness status
+
+Reads each agent's own configuration and reports what it is set up to send. This is the agent's view, not Terma's: it says what the agent is configured to send, not whether anything has arrived. Also available as `terma telemetry status`.
+
+```bash
+terma harness status [claude|codex|opencode]
+```
+
+The table shows `HARNESS`, `INSTALLED`, `TELEMETRY`, `SIGNALS`, `PROMPTS`, and `TOOL CONTENT`. Inside a repository with its own policy, a second `(local)` row shows what that repository narrows the export to.
 
 ## terma connect
 
-Point one or more agent harnesses at Terma to start exporting session events.
+Connects an agent's telemetry to Terma for the selected project, **machine-wide** — every repository on this machine, not just one. Also available as `terma telemetry connect`.
 
 ```bash
-terma connect [--source <agent>]
+terma connect <claude|codex|opencode> [<harness>...] [flags]
 ```
 
-Without `--source`, `terma connect` opens an interactive selector listing every harness Terma can detect on your machine. Select one or more to wire them up in a single pass.
+`connect` mints a project server key (`ter_srv_…`) and writes it, with the Terma OTLP endpoint, into the agent's own configuration. Your other settings are preserved; only Terma's own keys are written, and `terma disconnect` removes exactly those. Reconnecting to the same project reuses the installed key rather than minting another.
 
-```bash title="Connect a specific harness"
-terma connect --source claude-code
+Where the key lives depends on the agent:
+
+- **Claude Code** reads its OTLP headers from a helper script at startup. The key goes into a `0700` script under `~/.config/terma/helpers/`, and `~/.claude/settings.json` gets only the script's path — so the settings file never holds a credential. Pass `--inline-key` to write the key into the settings file instead.
+- **Codex** has no such mechanism, so its key is written into `~/.codex/config.toml`.
+- Any file that holds a key is tightened to `0600`.
+
+Name several agents to connect each in turn. Each gets its own key, so you can revoke one agent's key without touching the others.
+
+On a terminal, `connect` first shows a checklist of what to send and where. Every box has a flag, and `--yes` accepts the flags and defaults without asking.
+
+<Warning>
+  An agent exports to one place at a time. If it was already exporting to another project or tool, `connect` repoints it. `terma status` and `terma doctor` warn when an agent exports to a different project than the repository you are in.
+</Warning>
+
+### Flags
+
+| Flag | Description |
+|---|---|
+| `--signals <list>` | Signals to export: `traces`, `logs`, `metrics` (default: all; `none` ships nothing) |
+| `--exclude-prompts` | Do not export prompt text or model responses |
+| `--exclude-tool-content` | Do not export tool parameters, input, or output |
+| `--scope global\|local` | `global` (default) writes your user settings; `local` writes this repository's own settings (Claude Code and OpenCode) |
+| `--exports everywhere\|repos` | Export from every repository (default), or only from repositories whose committed Terma policy turns it on |
+| `--identity <value>` | Value for `enduser.id` on Codex and OpenCode sessions (default: your global Git email; `none` to omit). Claude Code reports the account it is signed in with. |
+| `--api-key <key>` | Install an existing server key instead of minting a new one |
+| `--key-name <name>` | Name for the minted key (default: `<harness>@<hostname>`) |
+| `--inline-key` | Store the key in Claude Code's settings file instead of a helper script |
+| `--no-statusline` | Leave Claude Code's status line alone |
+| `--force` | Remove conflicting per-signal OTLP settings instead of refusing to connect |
+| `-y`, `--yes` | Skip the confirmation prompt |
+
+### Repository-local policy
+
+`--scope local` writes only the signal and content switches into the repository's own `.claude/settings.json` — no endpoint, key, or project — so it is safe to commit. Claude Code applies it on top of your global connection inside that repository, which lets one repository send less than the rest of the machine. It needs no project, key, or sign-in. Codex reads a single configuration file, so it has no local scope.
+
+```bash title="Keep prompts out of one repository"
+terma connect claude --scope local --exclude-prompts --yes
 ```
 
 ## terma disconnect
 
-Stop a harness from exporting events to Terma. The underlying agent is left untouched — only the Terma export is disabled.
+Removes the telemetry settings Terma wrote, and nothing else. Also available as `terma telemetry disconnect`.
 
 ```bash
-terma disconnect [--source <agent>]
+terma disconnect <claude|codex|opencode> [--scope global|local] [-y]
 ```
+
+The server key stays live, because it is bound to the project rather than to this machine and may be used elsewhere. `disconnect` prints the key's masked prefix so you can find and revoke it in the web app when you are done with it.
+
+`--scope local` removes the repository's own policy from its `.claude/settings.json` and leaves your global connection as it is.
+
+## Per-repository routing versus a global connection
+
+| | `terma install` | `terma connect` |
+|---|---|---|
+| Scope | One repository | Every repository on this machine |
+| Project | The repository's binding | The selected project |
+| Hooks and commit stamping | Yes | No |
+| Typical use | Everyday setup | CI images, headless machines, one project for everything |
 
 <Note>
-`terma disconnect` does not uninstall or modify the coding agent itself. It removes the Terma hook configuration so the agent stops forwarding events. You can reconnect at any time with `terma connect`.
-</Note>
-
-## terma harness status
-
-Show which harnesses are currently connected, when they last sent an event, and how many events they have delivered.
-
-```bash
-terma harness status
-```
-
-The output table includes:
-
-| Column | Description |
-|---|---|
-| Source | The agent identifier (e.g. `claude-code`) |
-| Status | `connected`, `disconnected`, or `error` |
-| Last Event | Timestamp of the most recent event received |
-| Event Count | Total events delivered from this harness |
-
-## Supported Sources
-
-The following sources are recognized by name with `--source`:
-
-- `claude-code`
-- `codex`
-- `cursor`
-- `opencode`
-
-Terma also infers activity from traffic originating via `openrouter` and direct Anthropic or OpenAI SDK calls, even without an explicit harness hook.
-
-## Relationship to terma setup
-
-`terma setup` calls `terma connect` for each coding agent it detects on your machine during initial onboarding — you do not need to run `terma connect` manually for agents that were present at setup time. Use `terma connect` when you install a new agent after setup, or when you want to add a harness that was skipped during the initial configuration.
-
-```bash title="Add a harness installed after setup"
-terma connect --source opencode
-terma harness status
-```
-
-<Note>
-Each harness adapter is a one-liner that calls `terma hook <event>`. All logic lives in the Terma binary, so updating Terma updates the hook behavior without touching committed files.
+  Direct Codex telemetry is always machine-wide, because Codex ignores project-level OTLP settings. `terma install` works around this by routing each `codex` launch through a shim with the repository's settings.
 </Note>

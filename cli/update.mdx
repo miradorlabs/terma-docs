@@ -1,0 +1,66 @@
+---
+title: "terma update: keep terma current"
+sidebarTitle: "terma update"
+description: "terma update installs the latest release, refreshes what earlier versions installed, and configures automatic updates."
+---
+
+`terma update` downloads the latest published release for your platform, verifies its checksum, and replaces the binary in place. Existing hooks keep working throughout.
+
+## Usage
+
+```bash
+terma update --check        # check without installing
+terma update                # install the latest published release
+terma update --refresh      # bring this repository's hooks up to the installed version
+terma update --auto on      # install future releases automatically
+terma update --auto status  # show the saved preference
+terma update --auto off     # return to notices only
+```
+
+## Flags
+
+| Flag | Description |
+|---|---|
+| `--check` | Check for a newer release without installing it |
+| `--refresh` | Only migrate saved state and refresh what Terma installed — shims, the Claude Code status line, the OpenCode plugin, and this repository's hooks |
+| `--auto on\|off\|status` | Turn automatic updates on or off, or show the current setting (default: `off`) |
+| `--force` | Replace a source or development build with the latest published release |
+
+## Update notices and automatic updates
+
+Ordinary interactive commands check for a newer release once a day and print a notice when one exists. With `terma update --auto on`, Terma installs those releases automatically after a successful interactive command.
+
+Updates never run inside agent hooks, launch shims, scripts, or CI. Set `TERMA_NO_UPDATE_CHECK=1` to turn off all passive update checks; explicit `terma update` commands still work.
+
+## Homebrew and npm installs
+
+If you installed with Homebrew or npm, `terma update` upgrades through that package manager — the one that owns the copy of `terma` you are running, not whichever one is first on your `PATH`. Package-managed installations receive notices only; automatic updates never run a package manager.
+
+If `terma` is a dependency inside a project's `node_modules`, `terma update` prints the `npm install @miradorlabs/terma@latest` command for that project and runs nothing.
+
+## What happens after an update
+
+The first time a new version runs, it migrates anything in `~/.config/terma` whose format changed, before doing anything else, with no command from you.
+
+Once the new binary is in place, `terma update` also refreshes what earlier versions wrote, using the new version's templates and keeping every choice you made at install time:
+
+- the agent shims in `~/.config/terma/shim/bin`
+- the wrapped Claude Code status line
+- the OpenCode plugin
+- the commit hooks and agent hook files of the repository you ran `terma update` in
+
+It works only from what is on disk: it never signs in, never creates a file you removed, and never changes a choice.
+
+## Refreshing other repositories
+
+Repository hooks are committed files, so they change only when you ask. In each other repository where Terma is installed, run:
+
+```bash
+terma update --refresh
+```
+
+Then commit the files it lists. `terma status` and `terma doctor` tell you when a repository's committed hooks are out of date.
+
+<Note>
+  Updates compare the release version stamped into the binary with the latest published release. Source builds are never updated automatically; use `terma update --force` to switch one to a published release.
+</Note>

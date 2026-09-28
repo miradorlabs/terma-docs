@@ -1,80 +1,193 @@
 ---
-title: "terma install: Wire a Repository for Commit Attribution"
+title: "terma install: set up a repository"
 sidebarTitle: "terma install"
-description: "terma install wires a repository by writing commit hooks, agent adapters, and .terma.toml into a pull request — onboarding the whole team with one merge."
+description: "terma install binds a repository to a Terma project, routes your agents to it, and writes commit and agent hooks into files you commit — so one merged PR onboards the team."
 ---
 
-Run `terma install` from the root of a repository to bind it to your Terma project. The command writes commit hooks, agent adapter files, and a `.terma.toml` config, then packages everything into a pull request for your team to review. Once the PR merges, every engineer who pushes commits gets session attribution automatically — no extra steps required per person.
+Run `terma install` once in each repository you want to report to Terma. It binds the repository to a project, points your coding agents at that project for this repository only, and offers to write commit hooks and agent hooks into files you commit. Once those files are merged, everyone who works in the repository is onboarded.
 
-## What it does
-
-`terma install` inspects your repository, determines what needs to be added, and then:
-
-1. **Binds the repo** — Writes `.terma.toml` with your project ID and repo-level config.
-2. **Installs commit hooks** — Adds a `prepare-commit-msg` hook that appends `Agent-Session-Id` and `Agent-Tool` trailers to each commit, and a `post-commit` hook that spools events for delivery to Terma.
-3. **Writes agent adapter files** — Drops adapter config for each harness connected on your machine.
-4. **Opens a pull request** — All changes land in a PR, not directly on your default branch. Your team reviews and merges at their own pace.
-
-Before writing anything, `terma install` shows you the full plan so you can confirm the changes.
+`install` is self-contained: if you have not run [`terma setup`](/cli/setup), it signs you in and asks which agents you use first.
 
 ## Usage
 
 ```bash
-# Run from the repository root
+cd your-repo
 terma install
 ```
 
+Run it from any subdirectory — `install` uses the root of the Git worktree. A colleague who clones a repository that is already onboarded runs `terma install` too: it sets up their own routing and keys without rewriting the committed files.
+
+## What it does
+
+<Steps>
+  <Step title="Binds the repository to a project">
+    `install` records the project in `.terma/settings.json`, a committed file that names the project and never holds a secret.
+
+    - If your organization has one project, the repository is bound to it without asking.
+    - With several projects, on a terminal you pick one each time you run `install`; the project already bound is offered first, and **Enter** keeps it.
+    - `--project <name-or-id>` names the project instead. Without a terminal, or with `--yes`, an existing binding is kept.
+    - A binding to a project your account cannot see is never used: `install` says why and asks you to choose again.
+  </Step>
+  <Step title="Routes your agents to that project">
+    Your agents report to this repository's project whenever they run here, even if another repository on the same machine reports to a different project:
+
+    - **Claude Code** receives a per-repository settings document through `claude --settings`.
+    - **Codex CLI** receives its telemetry settings as launch-time `-c` overrides, keeping your own Codex home, login, and history.
+    - **Codex Desktop** reports through the repository's Codex hooks and the local Terma spool.
+
+    Claude Code and Codex CLI routing is delivered by small agent shims that `install` places ahead of the real `claude` and `codex` binaries on your `PATH`. See [Per-repository routing](#per-repository-routing).
+
+    Project keys are created for you and stored in your home directory, namespaced by project — never in the repository.
+  </Step>
+  <Step title="Turns on repository telemetry">
+    Repository telemetry is enabled by default, including on machines configured to export only from installed repositories. Your agents send prompt text and model responses unless you turn that off with `--prompts off`. An existing repository policy is kept unless you pass `--signals`, `--prompts`, or `--exclude-tool-content`.
+  </Step>
+  <Step title="Offers to write commit and agent hooks">
+    `install` shows what it will write and asks before writing commit hooks and each agent's own hooks (session start and end, tool use, stop) into files you commit.
+  </Step>
+  <Step title="Verifies the result">
+    `install` finishes by running [`terma doctor`](/cli/doctor) and reports what it found. Skip this with `--no-doctor`.
+  </Step>
+</Steps>
+
+## Output
+
+`install` reports one line per step — `✓` when it is done, `!` when it needs you — then numbers what is left for you to do:
+
+```text
+  ✓ Project       Payments API
+  ✓ Prompts       prompt text and model responses are sent — `terma install --prompts off` stops them
+  ✓ Claude Code   shim at ~/.config/terma/shim/bin/claude
+  ✓ Codex         shim at ~/.config/terma/shim/bin/codex
+  ✓ Status line   reads your plan's usage windows
+  ✓ Hooks         commit stamping via git; session hooks for Claude Code and Codex
+  ✓ Verified      terma doctor: all checks passed
+
+✓ terma installed
+
+Next steps:
+  1. Run `source ~/.zshrc`.
+  2. Commit these files:
+       .claude/settings.json
+       .codex/hooks.json
+       .terma/hooks/post-commit
+       .terma/hooks/prepare-commit-msg
+       .terma/settings.json
+
+       git add .claude/settings.json .codex/hooks.json .terma/hooks/post-commit .terma/hooks/prepare-commit-msg .terma/settings.json
+```
+
+The exact lines depend on your agents, hook manager, and shell.
+
+Add `--verbose` to also list every file and setting `install` wrote.
+
+<Note>
+  Restart running agents after installing. A Claude Code or Codex session that was already open keeps the configuration it started with.
+</Note>
+
 ## Flags
 
-<ParamField query="--project" type="string">
-  Specify the Terma project to bind this repository to, skipping the interactive prompt.
-</ParamField>
+| Flag | Description |
+|---|---|
+| `--project <name-or-id>` | Terma project to bind the repository to |
+| `--harness <list>` | Agents to configure: `claude`, `codex`, `codex-desktop`, or `none` for commit hooks only. Defaults to what `terma setup` recorded, otherwise a picker. |
+| `--adapters <list>` | Agents whose committed hooks to write. Defaults to the configured agents that have hooks. |
+| `--prompts on\|off` | Send prompt text and model responses. Defaults to your last choice for this project, and `on` for a first install. |
+| `--exclude-tool-content` | Do not export tool parameters, input, or output |
+| `--signals <list>` | Signals to export: `traces`, `logs`, `metrics` (default: all) |
+| `--identity <value>` | Identity stamped on Codex sessions (default: your `git user.email`; `none` to omit) |
+| `--no-hooks` | Do not install commit hooks or agent hooks |
+| `--no-path` | Do not edit your shell startup file; print the `PATH` line instead |
+| `--activation shim\|wrapper` | Deliver routing through `PATH` shims (default) or printed shell functions |
+| `--no-statusline` | Do not wrap Claude Code's status line |
+| `--force` | Replace conflicting agent telemetry settings instead of refusing |
+| `--no-doctor` | Do not run `terma doctor` after installing |
+| `--no-browser` | Print the sign-in URL instead of opening a browser |
+| `--dry-run` | Show what would change without writing anything |
+| `--verbose` | Show every file and setting written, not only whether each step worked |
+| `-y`, `--yes` | Do not ask for confirmation; keep an existing binding |
 
-<ParamField query="--dry-run" type="flag">
-  Preview the full PR diff without opening a pull request or writing any files. Use this to audit what will change before committing.
-</ParamField>
+```bash title="Non-interactive install in CI or a script"
+terma install --project "Payments API" --harness claude,codex --yes
+```
 
 ## What gets written
 
-| File / hook | Purpose |
+### In the repository (commit these)
+
+| File | Purpose |
 |---|---|
-| `.terma.toml` | Repo binding — project ID, config, and harness hints |
-| `prepare-commit-msg` | Appends `Agent-Session-Id` and `Agent-Tool` trailers to every commit |
-| `post-commit` | Spools attribution events and queues them for delivery to Terma |
-| Agent adapter files | Per-harness config for each connected agent (Claude Code, Codex, etc.) |
+| `.terma/settings.json` | The project binding: project id and name, organization id, and install metadata. No secrets. |
+| Commit hooks | `prepare-commit-msg` stamps `Agent-Session-Id` and `Agent-Tool` trailers; `post-commit` records the commit. Written through your hook manager — see below. |
+| `.claude/settings.json` | Claude Code hooks (`SessionStart`, `SessionEnd`, `PostToolUse`, `Stop`, `StopFailure`, `SubagentStart`, `SubagentStop`) and the repository's telemetry policy (which signals and content to send — never an endpoint or key) |
+| `.codex/hooks.json` | Codex hooks (`SessionStart`, `UserPromptSubmit`, `PreToolUse`, `PermissionRequest`, `PostToolUse`, `Stop`, `SessionEnd`, `SubagentStart`, `SubagentStop`) |
 
-<Note>
-  If your repository uses husky, lefthook, or another hook manager, `terma install` detects it and integrates through that manager's config files rather than writing directly to `.git/hooks`.
-</Note>
+Agent hook files are written only for the agents you use. Cursor (`.cursor/hooks.json`) and Antigravity (`.agents/hooks.json`) hooks are written only when you name them with `--adapters`.
 
-Every hook and adapter file is a one-liner that calls `terma hook <event>`. All attribution logic lives inside the `terma` binary — the committed files never need to change when you update the CLI, so a `terma update` on each developer's machine is all that is needed to pick up new behaviour.
-
-## No secrets in the repo
-
-`terma install` never writes credentials, tokens, or API keys into the repository. The PR contains only hook scripts, adapter configs, and `.terma.toml`. It is safe to review publicly, merge to open-source repos, and check in to version control.
-
-## One PR, whole team
-
-After the PR merges, every engineer who commits to the repo gets attribution traced back to their sessions — no per-person repository setup required. Individual developers still run `terma setup` on their own machines to bind their identities and connect their local agents.
-
-## After merging
-
-Once the PR merges, confirm the repository is wired correctly:
+Every hook is a guarded one-liner:
 
 ```bash
-# Show what is connected, queued, and predicted coverage
-terma status
-
-# Run end-to-end checks including a scratch commit
-terma doctor
+command -v terma >/dev/null 2>&1 && terma hook session-start || true
 ```
 
-## Removing
+On a machine without Terma, the hook does nothing and never fails a commit or disturbs the agent. All logic lives in the `terma` binary. Existing hooks and settings in these files are preserved; `install` adds only Terma's entries.
 
-To undo everything `terma install` wrote:
+### Hook managers
+
+`install` detects the hook manager the repository already uses and adds only Terma's entries:
+
+| Repository has | Terma adds |
+|---|---|
+| husky | Lines in `.husky/prepare-commit-msg` and `.husky/post-commit` |
+| lefthook | A `terma` command under each relevant hook in `lefthook.yml` |
+| pre-commit | A local hook per stage in `.pre-commit-config.yaml` |
+| No manager | Shims in `.terma/hooks/` and a per-clone `core.hooksPath` setting |
+
+Terma's shims chain to any hook already in `.git/hooks`, so existing local hooks keep running.
+
+### In your home directory (never committed)
+
+| Location | Purpose |
+|---|---|
+| `~/.config/terma/keys.json` | Project server keys, readable only by you |
+| `~/.config/terma/shim/bin/` | The `claude` and `codex` routing shims |
+| Shell startup file | A marked block that puts the shim directory first on `PATH` |
+| `~/.claude/settings.json` | A wrapper around your Claude Code status line (unless `--no-statusline`) |
+
+## Per-repository routing
+
+To send different repositories to different projects on one machine, `install` creates a directory of agent shims and adds it to the end of your shell startup file (`~/.zshrc`, `~/.bashrc`, `~/.bash_profile`, or fish `conf.d`). Terma cannot change the `PATH` of the shell you ran it from, so `install` ends with the command that does — for zsh, `source ~/.zshrc` — or you can open a new terminal.
+
+- `--no-path` prints the `PATH` line instead of editing your startup file.
+- `--activation wrapper` prints shell functions instead of using shims — POSIX functions for bash and zsh, fish functions when `$SHELL` is fish.
+- `TERMA_DISABLE=1 claude` (or `codex`) bypasses routing for one launch.
+
+<Warning>
+  An IDE extension or launcher that starts an agent by its full path bypasses the shims and uses your machine-wide configuration. `terma doctor` reports when routing is configured but not active, or when a later `PATH` entry puts the real binary ahead of the shim.
+</Warning>
+
+## Worktrees and non-Git folders
+
+- **Git worktrees and submodules** use their own root. A linked worktree without its own `.terma/settings.json` uses its main checkout's binding.
+- **Outside Git**, the first install uses the current directory, and later commands find the nearest `.terma/settings.json` above it. Agent hooks and telemetry work there; Git hooks and commit stamping are skipped. If you later run `git init`, run `terma install` again to add Git hooks.
+- **Bare repositories** are rejected because they have no working directory.
+
+## Keeping hooks current
+
+Hook files are committed, so they change only when you ask. After upgrading Terma, run this in each repository and commit the result:
+
+```bash
+terma update --refresh
+```
+
+`terma status` and `terma doctor` tell you when a repository's committed hooks are out of date.
+
+## Removing Terma from a repository
 
 ```bash
 terma uninstall
 ```
 
-`terma uninstall` removes `.terma.toml`, the commit hooks, and all agent adapter files that `terma install` created. It does not touch any files your team added after the merge.
+`terma uninstall` is symmetric with `install`. It removes Terma's hook wiring (only Terma's lines from shared hook files), its agent hooks for Claude Code, Codex, Cursor, and Antigravity, `.terma/settings.json`, the per-clone Git configuration, and local session state. Pass `-y` to skip the confirmation.
+
+Your home-directory routing state — keys and routing records — is kept, because other clones or worktrees bound to the same project may share it. To remove per-repository routing from the machine entirely, run `terma shim uninstall`.

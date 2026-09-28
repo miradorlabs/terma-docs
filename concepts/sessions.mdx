@@ -1,85 +1,82 @@
 ---
-title: "What Is a Terma Session? Messages, Tools, and Cost"
+title: "Sessions"
 sidebarTitle: "Sessions"
-description: "A Terma session captures the full timeline of an AI coding conversation: prompts, tool calls, model responses, file edits, and token cost."
+description: "A Terma session is one conversation with a coding agent, rolled up with its turns, model calls, tool calls, token usage, cost, and git activity."
 ---
 
-When you start a conversation with a coding agent — Claude Code, Codex, Cursor, OpenCode, or any other supported tool — Terma opens a session and records everything that happens until the conversation ends. That record is the foundation for attribution, spend tracking, and every finding Terma surfaces. Understanding what a session contains and how to query it gives you the full picture of what your AI tooling is actually doing.
+A session is one conversation with a coding agent — Claude Code, Codex, OpenCode, Cursor, Antigravity, or requests grouped from a router such as OpenRouter. Terma rolls each session up with everything it did: turns, model calls, tool calls, token usage, cost, subagents, and the git activity it produced. Sessions are the unit attribution, usage, and the dashboard are built on.
 
-## Session lifecycle
+## How a session is identified
 
-A session follows the natural lifecycle of a coding conversation:
+A session is identified by its **session id together with its source system** (`claude-code`, `codex`, `opencode`, and so on). The session id is the agent's own id for the conversation, and it is the same value that appears in the `Agent-Session-Id` trailer on commits the session contributed to.
 
-1. **Start** — The agent fires a `SessionStart` hook (or equivalent). Terma opens a session record, assigns it a routing key, and begins collecting events.
-2. **Tool calls** — Every tool invocation triggers a `PostToolUse` hook. Terma records the tool name, arguments, result, and the token cost of the surrounding exchange.
-3. **End** — The agent fires a `SessionEnd` hook. Terma closes the session, finalizes token counts, and marks it ready for attribution.
+Because ids are only unique within a source, CLI commands that act on one session take both:
 
-Events are spooled locally as they arrive and delivered to Terma in the background with automatic backoff. If the network is unavailable, nothing is lost — use `terma spool status` to see what is queued and `terma spool flush` to deliver it immediately.
+```bash
+terma session get <session-id> --source claude-code
+```
+
+## How sessions are captured
+
+Two channels feed a session, and Terma joins them on the session id:
+
+- **The agent's own telemetry export** carries model calls with their token counts and cost, tool calls, and — under the switches you chose — prompts, responses, and tool content.
+- **Terma's hooks** record when a session starts and ends, which files it edits, the subagents it spawns, and your plan's usage windows. Hooks append to a local spool and never wait for the network.
+
+How much of each channel exists depends on the agent. See [Integrations](/integrations/claude-code) for what each one reports.
 
 ## What a session contains
 
-Each session record includes:
-
 | Field | Description |
 |---|---|
-| **Routing key** | Unique identifier used in CLI commands and commit trailers |
-| **Source agent** | The tool that generated the session (e.g. `claude-code`, `codex`, `opencode`) |
-| **Model** | The model used, including version |
-| **User / principal** | The engineer attributed to the session |
-| **Prompt count** | Number of user turns |
-| **Message count** | Total messages exchanged |
-| **Tool call count** | Number of tool invocations |
-| **Input tokens** | Tokens in prompts and context |
-| **Output tokens** | Tokens in model responses |
-| **Cache read tokens** | Tokens served from prompt cache |
-| **Cache write tokens** | Tokens written to prompt cache |
-| **Total tokens** | Sum of all token counts |
-| **Cost (USD)** | Total cost derived from the entitlement rail used |
-| **Duration** | Wall-clock time from SessionStart to SessionEnd |
-| **Files touched** | Paths read or written during the session |
+| Source | The agent or system that produced it, such as `claude-code` or `codex` |
+| User or API key | The principal the session is attributed to |
+| Started, last active | When the session began and its latest event |
+| Turns | Prompts from the person, each with the work that followed |
+| Model calls | Each call with its model, provider, tokens, and cost |
+| Tool calls | Each tool invocation, with arguments and results if exported |
+| Tokens | Input, output, cache read, and cache write |
+| Cost | The provider's price for the session's model calls, in USD |
+| Models and providers | Every model and provider the session used |
+| Subagents | Agents the session spawned, and which part of the work each did |
+| Git activity | Branches, commits, pushes, and pull requests the session's tool calls produced, and the repositories it touched |
 
-## Session replay
+## Events
 
-In the Terma dashboard, you can replay any session in full conversational order. Every event in the session — prompts, tool calls, file edits, model responses — is presented in the sequence it occurred. You can filter the timeline to show only conversation turns, only tool calls, or only errors, and search across messages, tool names, and file paths. This makes it straightforward to trace exactly what an agent did during a long or expensive session.
+Inside a session, Terma keeps an ordered event history you can replay in the dashboard or with `terma session events`:
 
-## Routing keys
+| Kind | Meaning |
+|---|---|
+| `session_start` | The session began |
+| `turn_start` | A new turn began |
+| `user_message` | A prompt from the person |
+| `assistant_message` | A response from the model |
+| `model_call` | A model request, with its usage once settled |
+| `tool_call`, `tool_result` | A tool invocation and its result |
+| `tool_decision` | An approval decision about a tool call |
+| `compaction` | The agent summarized earlier context to make room |
+| `error` | An error during the session |
 
-Every session has a routing key: a stable identifier you use to reference that session in CLI commands, in the dashboard, and in the commit trailers Terma appends to git commits. Routing keys appear in `terma session list` output and in the `Agent-Session-Id` commit trailer.
+Content appears only when the agent was configured to export it.
 
-Use routing keys with the session sub-commands to pull up any session's details:
+## Session totals versus usage over time
 
-```bash
-# List recent sessions for a specific user
-terma session list --user ada --since 7d
+A session's totals cover its whole life. `terma usage` and the dashboard's usage charts instead sum spend that settled inside a time window. A session that started yesterday and ran past midnight counts toward today's usage only for the part that happened today, so the two views legitimately differ whenever a session straddles the window's edge.
 
-# Show a single session's roll-up (cost, tokens, tool calls)
-terma session get <routing-key>
-
-# Replay all events in conversational order, tool calls only
-terma session events <routing-key> --tools-only
-
-# Show git and GitHub actions the session performed
-terma session git <routing-key>
-```
-
-<Tip>
-  Pass `-o json` to any session command to get machine-readable output suitable for piping into other tools or dashboards.
-</Tip>
-
-## Spooling
-
-Terma uses a local spool to buffer session events before delivery. This means the `prepare-commit-msg` git hook — which reads spool manifests to find sessions that touched staged files — never makes a network call. The hook completes in under 50 ms regardless of network conditions.
-
-Use the spool commands to inspect and manage buffered events:
+## Reading sessions
 
 ```bash
-# Show what is queued locally
-terma spool status
-
-# Deliver queued events to Terma now (rather than waiting for backoff)
-terma spool flush
+terma session list --user ada --since 7d          # recent sessions for one person
+terma session get <session-id> --source claude-code
+terma session events <session-id> --source claude-code --tools-only
+terma session git <session-id> --source claude-code
 ```
 
-<Note>
-  If a session was created while offline, run `terma spool flush` before committing so the session is available for attribution when the commit hook runs.
-</Note>
+<CardGroup cols={2}>
+  <Card title="terma session" icon="terminal" href="/cli/sessions">
+    List, inspect, and replay sessions from the terminal.
+  </Card>
+  <Card title="Sessions in the dashboard" icon="play" href="/dashboard/session-replay">
+    Browse sessions and replay their timelines in the web app.
+  </Card>
+</CardGroup>

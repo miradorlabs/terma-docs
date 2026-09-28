@@ -1,77 +1,115 @@
 ---
-title: "Connect OpenAI Codex to Terma for Usage Tracking"
+title: "Connect Codex to Terma"
 sidebarTitle: "Codex"
-description: "Wire Codex to Terma via a notify entry and hooks.json to capture turn-by-turn activity, file edits, and token spend from Codex sessions."
+description: "Terma captures Codex CLI through its native OpenTelemetry export routed per repository, and Codex Desktop through trusted repository hooks. Both attribute commits."
 ---
 
-Codex operates turn-by-turn, and Terma captures each turn as it happens. A notify entry announces the turn to Terma, while `.codex/hooks.json` intercepts patch events to build a file manifest that Terma uses for commit attribution. Together, these two mechanisms give you per-turn visibility into what Codex touched, what it spent, and which commits it produced.
+Terma supports both ways of running OpenAI's Codex, and treats them as separate choices:
 
-## How it works
+- **Codex CLI** — the `codex` shell command. Usage and cost arrive through Codex's own OpenTelemetry export, routed to the repository's project each time you launch `codex`.
+- **Codex Desktop** — the desktop app, which does not launch through your shell. It reports through repository hooks and Terma's local spool.
 
-Terma hooks into Codex at two levels:
+Both use the repository's `.codex/hooks.json` to attribute commits.
 
-- **Notify entry** — announces each turn to Terma as it starts, establishing the session context and associating it with the user running Codex
-- **`apply_patch` hook** — fires whenever Codex writes a patch to the working tree; Terma intercepts the payload to build a file manifest that ties staged changes back to the session
+## Codex CLI
 
-When a session ends and a commit is made, Terma matches the file manifest from the `apply_patch` events against the commit diff to produce attribution data — connecting the commit to the exact Codex session that generated it.
-
-## Setup
-
-Run `terma setup` once per developer machine. It writes the notify entry and creates `.codex/hooks.json` automatically.
+### Set up
 
 ```bash
-terma setup
+cd your-repo
+terma install --harness codex
 ```
 
-After setup, your `.codex/hooks.json` will contain:
+Reload your shell as `install` tells you (for zsh, `source ~/.zshrc`), commit the files it lists, then trust the hooks in Codex (see [Trust the hooks](#trust-the-hooks)).
 
-```json .codex/hooks.json
-{
-  "hooks": [
-    {
-      "event": "apply_patch",
-      "command": "terma hook post-tool-use"
-    }
-  ]
-}
-```
+### How it works
 
-### Trust the hooks in Codex
+Codex ignores telemetry settings in a repository's own configuration, so a direct Codex export is always machine-wide. `terma install` works around this: it puts a small `codex` shim first on your `PATH`, and each time you run `codex` in the repository, the shim passes the repository's telemetry settings as launch-time `-c` overrides. Your own Codex home directory, login, history, trust settings, and notifier are left as they are.
 
-Codex requires you to explicitly grant hook permissions the first time hooks are registered on a machine. After `terma setup` completes, open Codex and run:
+This channel carries model calls with their token counts and cost, tool calls, and — unless you turn them off — prompts and responses.
 
-```text
-/hooks
-```
+<Warning>
+  The launch-time overrides include the project's telemetry key, which local process inspection can see. Do not log the arguments that agent launchers generate.
+</Warning>
 
-This is a one-time step per machine. Once trusted, hooks fire automatically for all subsequent sessions.
+Codex sessions carry your identity as `enduser.id`, taken from your `git user.email` by default. Change it with `terma install --identity <value>`, or pass `--identity none` to omit it.
+
+## Codex Desktop
+
+### Set up
+
+1. Choose **Codex Desktop** in `terma setup`, or run `terma install --harness codex-desktop` in a repository. Choose **Codex CLI** too if you also use the shell command.
+2. Run `terma install` in each repository you want to report. It binds the project, stores a project key and content policy on your machine, and writes the Codex hooks for you to commit.
+3. Approve the hooks in Codex Desktop:
+   1. Open the repository in Codex Desktop and trust the project if prompted.
+   2. Open **Settings → Hooks** and select **Review** for the entries from this repository's `.codex/hooks.json`. If hooks are disabled, enable them there.
+   3. Inspect the `terma hook …` commands and approve each Terma entry. Codex skips any entry you leave untrusted.
+4. Run `terma desktop status` in the repository. **Codex hooks: ready** confirms the current definitions are trusted.
+5. Start a new **Local** task in that repository, send a test message, and run `terma doctor` to verify delivery.
+
+Terma installs no background receiver, launch agent, or global Codex exporter for Desktop.
+
+### What Desktop capture includes
+
+- Sessions and turns, with prompt text only if the repository allows prompts
+- Local tool calls and their results, with arguments and output only if the repository allows tool content
+- Per-response token usage, turn duration, and time to first token, read from Codex's local session log
+- Approval requests, labeled **requested** — Codex does not tell hooks whether you approved or denied
+- Files edited, for commit attribution
 
 <Note>
-  If you skip the `/hooks` trust step, patch events will not be forwarded to Terma and file attribution will be incomplete. Run `terma doctor` to confirm hooks are active.
+  Desktop capture reads Codex's private local session format, which can change between Codex releases, and Codex exempts some hosted and specialized tools from hooks. Terma cannot guarantee every Desktop tool call is captured, and new Codex item types may require a Terma update.
 </Note>
+
+## Trust the hooks
+
+Codex runs repository hooks only after you trust them, and asks again whenever a hook definition changes — for example after `terma update --refresh`. `terma install` never approves hooks on your behalf.
+
+- **Codex CLI:** run `/hooks` inside Codex and approve the Terma entries.
+- **Codex Desktop:** open **Settings → Hooks → Review** and approve the Terma entries.
+
+`terma doctor` reports untrusted hooks under **agent hooks run**.
+
+## Repository hooks
+
+`install` adds these entries to `.codex/hooks.json`:
+
+| Hook | What Terma records |
+|---|---|
+| `SessionStart` | The session begins |
+| `UserPromptSubmit` | A turn begins, with prompt text if allowed |
+| `PreToolUse`, `PostToolUse` | Tool calls, their observed duration, and the files each edit touches |
+| `PermissionRequest` | Codex asked for approval |
+| `Stop`, `SessionEnd` | A turn or the session ended, with token usage and plan usage windows |
+| `SubagentStart`, `SubagentStop` | Subagents the session spawns |
+
+Each command is guarded, so on a machine without Terma it does nothing.
 
 ## What's captured
 
-| Signal | Detail |
-|---|---|
-| Per-turn activity | Each turn is recorded with its timestamp and context |
-| File edit manifests | Files touched by `apply_patch` events, used for commit attribution |
-| Token counts | Input and output tokens per session |
-| Cost | USD cost per session, attributed to the user who ran it |
-| Model | Which Codex model handled the session |
+| Signal | Codex CLI | Codex Desktop |
+|---|---|---|
+| Sessions, turns, and subagents | Yes | Yes |
+| Model calls, tokens, and cost | Yes (OpenTelemetry) | Tokens per response (session log) |
+| Tool calls | Yes | Local tools; some hosted tools are exempt |
+| Prompts and responses | Unless `--prompts off` | If the repository allows prompts |
+| Files edited, for commit attribution | Yes | Yes |
+| Plan usage windows and credits | Yes | Yes |
 
-## Verifying the connection
+<Note>
+  `--exclude-tool-content` stops Codex from exporting tool output, but Codex cannot suppress native tool arguments.
+</Note>
 
-Check that Codex is wired correctly after setup:
-
-```bash
-terma harness status
-```
-
-Codex should appear as connected. For a deeper end-to-end check:
+## Verify
 
 ```bash
-terma doctor
+terma status            # the Agent line should show Codex exporting to this project
+terma desktop status    # Codex Desktop: are this repository's hooks trusted?
+terma doctor            # proves hooks stamp a commit and events reach Terma
 ```
 
-`terma doctor` verifies that the notify entry is firing, that `apply_patch` events are reaching Terma, and that attribution is resolving. Any misconfiguration is surfaced as a specific finding with a suggested fix.
+`terma desktop status` also reports a separate, user-level Codex exporter if one is active, since that can send Desktop activity from other repositories. Use `terma disconnect codex` to remove a Terma-owned one.
+
+<Tip>
+  For Codex-managed local worktrees, a Git-ignored `.terma/settings.json` must be copied into the worktree. Add it to `.worktreeinclude` if needed.
+</Tip>

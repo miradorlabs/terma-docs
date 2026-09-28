@@ -1,37 +1,49 @@
 ---
-title: "terma principal find: Resolve People Across AI Tools"
-sidebarTitle: "terma principal find"
-description: "terma principal find resolves a name, email, alias, or ID to all principals (identities) a person holds across their connected AI tools."
+title: "terma principal: resolve people and API keys"
+sidebarTitle: "terma principal"
+description: "terma principal list and find map the ids in sessions and usage to the people and API keys behind them."
 ---
 
-One person often appears as multiple principals in Terma. The same developer may have a Claude Code identity, a Codex identity, and an OpenRouter identity — each observed independently by a different tool. `terma principal find` resolves a name, email, alias, or user ID to every principal that person holds, so you can confirm that usage aggregation and attribution are working as expected.
+Sessions and usage carry principal ids, never names. The principal catalog maps each id to the name the provider reported — a user's email, or an API key's label — and to any alias set in the Terma web app.
+
+Every `--user` and `--api-key` flag on [`terma usage`](/cli/usage) and [`terma session`](/cli/sessions) accepts a name as well as an id and resolves it through this catalog, so you rarely need these commands directly. Use them when a match is ambiguous, or to see what the catalog knows.
+
+`terma principal` is an advanced command: it works as documented but is not listed in `terma --help`.
 
 ## What is a principal?
 
-A principal is a unique identity Terma observed from a specific tool or provider. Terma creates one principal per (person, source) pair the first time it sees activity from that combination. One real person can hold several principals — for example, a Claude Code principal and a separate Codex principal — and `terma usage` aggregates them automatically once their identities are bound via `terma setup`.
+A principal is an identity observed by one source: a user seen by Claude Code, a user seen by Codex, or an API key seen by OpenRouter. The same person is often several principals — for example, the same email seen by Claude Code and by Codex, whose user ids live in different namespaces. A name or email match returns all of them, so `terma usage --user ada` covers every agent Ada uses.
 
-## Usage
+## terma principal find
 
-```bash
-terma principal find <query>
-```
-
-The `<query>` argument matches against name, email, alias, or user ID. Matching is case-insensitive and supports partial matches on names.
-
-## Example
+Finds the principals matching a name, email, alias, or id.
 
 ```bash
-terma principal find dawson
+terma principal find <name-or-id> [--kind user|api_key]
 ```
 
-The output lists every principal that matched, showing the tool or source it came from and the user ID Terma assigned. This is the same user ID that appears in the `USER ID` column of `terma usage` output — useful for confirming that a `--user dawson` filter in `terma usage` is picking up rows from every source you expect.
+Matching works the way `--user` does: an exact id first, then an exact name or alias (case-insensitive), then a unique substring. Several principals sharing one name — the same person seen by two agents — count as one match.
 
-## When to use
+```bash
+terma principal find ada
+```
 
-- **Usage shows `(no user id)` for some traffic** — Someone's identity from a specific tool has not been bound yet. Use `terma principal find` to check what principals exist, then ask the developer to run `terma setup` on their machine.
-- **Confirming cross-tool aggregation** — You want to verify that a person's activity from Claude Code and Codex is being rolled up into the same row in `terma usage`.
-- **Onboarding a new team member** — After a new developer runs `terma setup`, use `terma principal find` to confirm their principals are visible and correctly attributed.
+## terma principal list
+
+Lists every user and API key the project has seen.
+
+```bash
+terma principal list [--kind user|api_key] [--source claude-code]
+```
+
+The table shows `SOURCE`, `KIND`, `NAME`, `ALIAS`, and `ID`.
+
+## When to use them
+
+- **A name matches several people.** `terma usage --user da` fails with `"da" matches several principals (Dana, dawson@example.com)`. Use `principal find` to see the candidates, then pass the full email, the alias, or the id.
+- **Usage shows `(no user id)`.** That traffic is attributed to an API key rather than a person. Run `terma usage --group-by api-key` or `terma principal list --kind api_key` to see which key.
+- **Checking a teammate's identities.** Confirm that a person's Claude Code and Codex principals both resolve to the name you expect.
 
 <Note>
-  If a principal is not found for a given tool, traffic from that tool is attributed to `(no user id)` in usage reports. Have the developer run `terma setup` on their machine to bind their identity and create the missing principal.
+  The catalog is read-only from the CLI. To give a principal a friendlier name — for example, to label an OpenRouter key with the person who owns it — set an alias in the web app under your project's **Settings → Principals**.
 </Note>

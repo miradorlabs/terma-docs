@@ -1,0 +1,75 @@
+---
+title: "Configuration, profiles, and environment variables"
+sidebarTitle: "Configuration"
+description: "Where terma keeps its files, how profiles work, and the environment variables that change its behavior."
+---
+
+Terma keeps everything that is personal to you — credentials, keys, and preferences — in your home directory, and only a project reference in the repository.
+
+## Local files
+
+```text
+~/.config/terma/
+  config.json        profiles, organization, endpoints, preferred agents
+  credentials.json   CLI credentials, one per organization and profile (0600)
+  keys.json          project server keys and per-agent keys (0600)
+  spool/             queued events
+  shim/bin/          per-repository agent routing shims
+  helpers/           Claude Code OTLP header helper scripts (0700)
+```
+
+The directory honors `XDG_CONFIG_HOME`, and `TERMA_CONFIG_DIR` replaces it entirely.
+
+## Profiles
+
+A profile keeps a separate set of selections side by side — for example, two organizations you move between. Credentials are stored per profile, so switching profiles switches identity.
+
+```bash
+terma config profiles        # list profiles
+terma config use <profile>   # switch the active profile
+terma config show            # show the resolved configuration
+```
+
+Use `--profile <name>` on any command, or set `TERMA_PROFILE`, to use a profile for one command.
+
+`terma config` is an advanced command: it works as documented but is not listed in `terma --help`.
+
+### Self-hosted deployments
+
+Terma uses its production endpoints by default. For a self-hosted deployment, store endpoint overrides on a profile:
+
+```bash
+terma config set \
+  --app-url  https://terma.example.com \
+  --auth-url https://auth.terma.example.com \
+  --api-url  https://api.terma.example.com \
+  --otlp-url https://otel.terma.example.com
+```
+
+Combine this with `terma config use <name>` to keep one profile per deployment. `terma status` reports `Endpoints: custom` for a profile with overrides, so it never reads as a production one.
+
+## Environment variables
+
+| Variable | Purpose |
+|---|---|
+| `TERMA_API_KEY` | Project server key for CI and headless commands |
+| `TERMA_PROJECT_ID` | Project for this command, overriding the repository's binding |
+| `TERMA_PROFILE` | Configuration profile to use |
+| `TERMA_CONFIG_DIR` | Replace the default configuration directory |
+| `TERMA_HOOKS=0` | Disable all Terma hooks immediately |
+| `TERMA_DISABLE=1` | Bypass per-repository routing for one agent launch, for example `TERMA_DISABLE=1 claude` |
+| `TERMA_DEBUG=1` | Explain hook behavior on stderr |
+| `TERMA_NO_UPDATE_CHECK=1` | Turn off passive update checks and automatic updates |
+| `TERMA_STATUSLINE_TIMEOUT` | Extend the Claude Code status line renderer timeout (default `30s`), for example `60s` |
+| `TERMA_API_URL`, `TERMA_AUTH_URL`, `TERMA_APP_URL`, `TERMA_OTLP_URL` | Override individual endpoints, for development and self-hosted deployments |
+
+## Turning Terma off
+
+| To stop | Do this |
+|---|---|
+| All hooks on this machine, right now | `export TERMA_HOOKS=0` |
+| Routing for one agent launch | `TERMA_DISABLE=1 claude` |
+| Terma in one repository | `terma uninstall` in that repository |
+| Per-repository routing on this machine | `terma shim uninstall` |
+| An agent's machine-wide telemetry | `terma disconnect <agent>` |
+| This machine's sign-in | `terma logout` |

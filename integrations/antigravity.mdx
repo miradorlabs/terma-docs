@@ -1,0 +1,52 @@
+---
+title: "Connect Antigravity CLI to Terma"
+sidebarTitle: "Antigravity"
+description: "Terma attributes commits from Google's Antigravity CLI (agy) and records its turns and tool steps through workspace hooks. Token counts and cost are not available."
+---
+
+<Info>
+  **Coming soon in onboarding.** Antigravity appears as **Coming Soon** in the `terma setup` and `terma install` agent pickers. You can wire its hooks today with `terma install --adapters antigravity`; the capabilities below describe what that captures.
+</Info>
+
+Google's Antigravity CLI (`agy`) replaced Gemini CLI for many users in June 2026. It has no configurable OpenTelemetry export, so everything Terma learns about an `agy` session arrives through the lifecycle hooks Terma writes into the repository. Support is **partial**: commits are attributed and every tool step is recorded, but `agy` reports no token counts or cost.
+
+## Set up
+
+In a repository you have already installed Terma in:
+
+```bash
+terma install --adapters antigravity
+```
+
+A repository that already has one of `agy`'s customization directories (`.agents`, `.agent`, `_agents`, or `_agent`) gets the hooks by default. Commit the updated `.agents/hooks.json`.
+
+Terma owns one named hook in that file, `terma`, holding `PreInvocation`, `PostToolUse`, `PostInvocation`, and `Stop`. Every other named hook is preserved, and `terma uninstall` removes only Terma's entry. If you set `"enabled": false` on Terma's entry, a reinstall keeps it and `terma doctor` reports it.
+
+## Make sure the hooks run
+
+`agy` runs a workspace's hooks only under two conditions, and `terma doctor` checks both:
+
+- **Trust.** You must trust the workspace from inside `agy`.
+- **Workspace binding.** Hooks belong to an `agy` project, not to the directory you started in. An `agy` started in a folder that is not one of its projects works in a scratch "CLI Project" and loads no repository hooks. Open the repository as a project, or in print mode pass `--add-dir <repo>`.
+
+## What's captured
+
+| Signal | Available |
+|---|---|
+| Commit attribution (`Agent-Tool: antigravity`) | Yes |
+| Sessions and turns | Yes |
+| Model per call | Yes |
+| Every tool step, with completed or error status | Yes |
+| Files edited, for commit attribution | Yes |
+| Token counts, cost, plan, and quota | No — `agy` does not report them |
+| Tool durations | No |
+| Prompt, response, and command text | No — hooks never read it |
+
+Treat Antigravity data in Terma as evidence of activity, not usage or spend. `agy` has no session-end hook, so a session is closed after a period of inactivity.
+
+## Verify
+
+```bash
+terma harness list antigravity   # what Terma supports for Antigravity
+terma doctor                      # checks trust and workspace binding, and proves a commit is stamped
+```

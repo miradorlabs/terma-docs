@@ -1,69 +1,76 @@
 ---
-title: "Manage Your Terma Account and Machine Authorization"
+title: "Sign-in and organizations"
 sidebarTitle: "Account"
-description: "terma login, logout, whoami, org list, and update manage credentials, memberships, and binary updates from the terminal on a per-machine basis."
+description: "terma login, logout, whoami, and org manage your organization-scoped CLI credentials and switch between organizations."
 ---
 
-The account commands manage your machine's authorization credential and let you inspect who you are authenticated as, which organization and project are active, and what the credential is permitted to do. Each machine holds its own credential — revoking one does not affect others.
+Your CLI credential is scoped to an **organization**, not a project. Projects are chosen per repository by [`terma install`](/cli/install), so you can move between repositories and projects without signing in again. A profile keeps one credential for each organization you sign into.
+
+`terma setup` and `terma install` sign you in when needed, so most people never run `terma login` directly. `terma org` is listed in `terma --help`; `login`, `logout`, and `whoami` are advanced commands that are hidden from it but fully supported.
 
 ## terma login
 
-Authorize this machine to act on your behalf.
+Signs this machine in to one of your organizations.
 
 ```bash
-terma login
+terma login [flags]
 ```
 
-`terma login` opens a browser-based PKCE flow and issues a machine credential scoped to your user and organization. You need to run it when:
+If this profile already holds a working credential for the organization, nothing new is minted and no browser opens. Otherwise your browser opens on Terma's CLI approval page, you choose an organization and approve, and a single-use code is handed back to a listener on `127.0.0.1`. The exchange uses PKCE, so the code is useless to anyone without the verifier held by the CLI process.
 
-- You are setting up Terma on a new machine
-- Your existing credential has expired
-- `terma whoami` returns an authentication error
+| Flag | Description |
+|---|---|
+| `--org <name-or-id>` | Sign in to, or switch to, a particular organization (default: the current one) |
+| `--force` | Always open the browser and mint a new session; the session it replaces for that organization is revoked |
+| `--label <name>` | Name shown for this session (default: the hostname) |
+| `--no-browser` | Print the authorization URL instead of opening a browser |
+
+Credentials are stored in `~/.config/terma/credentials.json`, readable only by you.
 
 ## terma logout
 
-Revoke this machine's credential from Terma's side.
+Revokes every session this profile holds — one per organization you signed into — on the server, then deletes the local credentials.
 
 ```bash
 terma logout
 ```
 
-The credential stored on this machine is invalidated immediately. Other authorized machines and your Terma account are not affected.
-
-<Note>
-Machine credentials are scoped per-device. Revoking one machine's credential does not affect other authorized machines or your account.
-</Note>
+Revoking on the server is what makes this meaningful: deleting the local file alone would leave live tokens that anyone holding a copy could keep using.
 
 ## terma whoami
 
-Show the identity and scope of the credential currently active on this machine.
+Shows the identity and scope of the current credential.
 
 ```bash
 terma whoami
 ```
 
-The output includes your user email, organization, currently selected project, credential expiry time, and the set of permitted scopes. Use this command to confirm your context before running queries or to diagnose authentication failures.
+The output includes the profile, the API and auth endpoints, the credential type, your user, the organization, the project from the current repository's binding (or `(no repository project)`), and how many other organizations this profile is signed into.
 
 ## terma org list
 
-List every organization your account belongs to.
+Lists the organizations you belong to, with your role in each and whether this profile is signed in to it.
 
 ```bash
 terma org list
 ```
 
-The output includes the org slug, display name, and your role in each org. This is useful when your account spans multiple organizations — for example, a consultant working across several client workspaces.
+Organization names are shown without ids. Use `terma org list -o json` to see ids, or when two organizations share a name.
 
-## terma update
+## terma org use
 
-Download and install the latest Terma binary in-place.
+Makes an organization the current one.
 
 ```bash
-terma update
+terma org use [name-or-id] [--no-browser]
 ```
 
-The update command fetches the latest release, verifies the checksum, and replaces the current binary. No manual download or PATH change is required.
+A session this profile already holds for that organization is reused and verified; otherwise your browser opens with the organization preselected. With no argument on a terminal, `org use` shows a picker you navigate with the arrow keys.
 
 <Note>
-After updating, run `terma doctor` to confirm hooks and harnesses are still working correctly.
+  Switching organizations never changes a repository's project binding. To choose a project for a repository, run `terma install` in it.
 </Note>
+
+## Headless and CI use
+
+In CI or on a headless machine, set `TERMA_API_KEY` to a project server key instead of signing in. See [Configuration](/cli/configuration#environment-variables).

@@ -1,0 +1,66 @@
+---
+title: "Metrics: dashboards and Explore"
+sidebarTitle: "Metrics"
+description: "Explore every metric your agents report, split and filter it, and build dashboards of charts, stats, tables, and notes."
+---
+
+**Metrics** gives you direct access to the metrics behind every page in Terma. Use **Explore** to ask a one-off question, and **Dashboards** to keep the charts you come back to.
+
+## Derived and ingested metrics
+
+Every metric carries one of two badges:
+
+- **Derived** — computed by Terma, the same for every agent. Use these to compare across sources.
+- **Ingested** — exported by each agent as-is. These carry detail specific to one agent.
+
+## Explore
+
+Open **Metrics → Explore** to build a query:
+
+1. **Choose a metric** from **Recent**, **Derived by Terma — Normalized across harnesses**, or **Ingested from harnesses**.
+2. **Choose a measurement.** Counters offer **Increase**, **Rate / second**, and **Latest value**; gauges offer **Latest value**; histograms offer **Average**, **Observations**, **Observation sum**, **Median (estimated)**, and **p95 (estimated)**.
+3. **Filter** by attribute and value, and **split** into a series per value of up to four attributes.
+4. **Pick a time range** — 5m, 15m, 1h, 4h, 12h, 1d (the default), 7d, or 30d — and a chart style: **Line**, **Area**, **Bars**, or **Stacked**.
+
+Select **Edit as PromQL** to write the query yourself, and **Add query** to plot several on one chart. The legend shows each series' latest, peak, and total; click a series to show only it, or shift-click to toggle it.
+
+Not sure where to start? The empty page suggests **Spend by model**, **Tokens by harness**, **Model calls by provider**, and **Spend by person**.
+
+**Copy link** shares the exact query, **Auto-refresh** updates it every 30 seconds, and **Add to dashboard** saves it to an existing or new dashboard.
+
+## Dashboards
+
+Open **Metrics → Dashboards** to see your dashboards, each with a live preview.
+
+### Create a dashboard
+
+Select **New dashboard** and choose:
+
+- **Blank** — start empty, with room for up to 24 widgets
+- **From a template** — start from one of Terma's templates
+
+Give it a name and description, and choose the time window it **Opens on**.
+
+### Edit a dashboard
+
+Select **Edit** to drag and resize widgets, and **Add widget** to add one. Changes save automatically, and you can undo them.
+
+A widget is one of:
+
+| Type | Shows |
+|---|---|
+| **Timeseries** | One or more series over time, as lines, areas, bars, or stacked |
+| **Stat** | A single number |
+| **Pie** | Shares of a total |
+| **Table** | Values per series |
+| **Text** | Notes in Markdown |
+
+Each widget holds up to six queries, built with the metric picker or written in PromQL. A widget can follow the dashboard's time window or pin its own. From a widget's menu you can edit, open it in Explore, duplicate, resize, or delete it.
+
+### View a dashboard
+
+Choose a time window — 15 minutes, 1 hour, 4 hours, 12 hours, 24 hours (the default), 7 days, or 30 days. The window is part of the URL, so **Copy link** shares exactly what you see.
+
+<Note>
+  `terma usage` runs the same kind of query as the dashboard's usage figures, and its JSON output includes the exact expressions it used under `queries`.
+</Note>

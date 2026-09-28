@@ -1,61 +1,75 @@
 ---
-title: "Terma CLI: Query AI Activity from Your Terminal"
+title: "Terma CLI overview"
 sidebarTitle: "Overview"
-description: "The Terma CLI gives you terminal access to sessions, usage, attribution, and harness management — with JSON output for scripting and pipeline use."
+description: "The terma CLI connects your coding agents to Terma, stamps the commits they produce, and reads usage and sessions back from your terminal."
 ---
 
-The Terma CLI (`terma`) is a single static binary that lets you query AI activity, manage harnesses, onboard repositories, and inspect sessions directly from your terminal. It covers the full lifecycle: signing in, wiring up agents, stamping commits, and pulling usage data — all scriptable and composable with your existing tooling.
+The Terma CLI (`terma`) connects coding agents to Terma, then stamps the commits they produce so agent spend can be traced to shipped code. It is also how you read that activity back from a terminal — or from an agent shelling out to `terma`.
 
-## Command groups
+## The workflow
+
+Terma has two onboarding commands with different owners, then two that tell you whether it worked:
+
+| Command | Run it | What it does |
+|---|---|---|
+| [`terma setup`](/cli/setup) | Once per developer (optional) | Signs you in and records which coding agents you use. It binds no project and writes no repository files. |
+| [`terma install`](/cli/install) | Once per repository | Binds the repository to a Terma project, routes your agents to it, and offers to install commit and agent hooks. |
+| [`terma status`](/cli/status) | Any time | A quick, local view of sign-in, binding, hooks, agents, and queued events. |
+| [`terma doctor`](/cli/doctor) | After installing, or when something looks wrong | Verifies the whole chain end to end, including a scratch commit. |
+
+```bash
+terma setup       # optional: sign in and choose agents
+terma install     # run inside each repository
+terma doctor      # verify the chain end to end
+```
+
+## Commands
+
+`terma --help` lists the commands you need day to day:
+
+```text
+setup       Sign in and choose your coding agents (once per developer)
+install     Configure this workspace: point your agents at its project and wire the hooks
+status      Show connections, queued events, and setup readiness
+doctor      Verify the whole chain end to end and report setup readiness
+session     List and inspect the coding sessions your agents ran
+usage       Sum token usage and cost over a time window, by person, agent or model
+org         List and switch between your organizations
+uninstall   Remove everything terma install wrote to this repository
+update      Check for updates, install the latest release, or configure automatic updates
+```
+
+Advanced commands for automation and troubleshooting are hidden from `--help` but fully supported: `login`, `logout`, `whoami`, `project`, `principal`, `connect`, `disconnect`, `harness`, `spool`, `config`, and `desktop`. Run `terma <command> --help` on any of them for details.
 
 <CardGroup cols={2}>
   <Card title="Onboarding" icon="rocket" href="/cli/setup">
-    Sign in, connect coding agents (Claude Code, Codex, Cursor, OpenCode), wire repositories for commit stamping, and verify end-to-end coverage.
+    Sign in, install Terma in a repository, check status, and verify the chain.
   </Card>
   <Card title="Insights" icon="chart-bar" href="/cli/usage">
-    Query token usage and cost, list and replay sessions, trace git actions, and find principals.
+    Sum usage and cost, list and replay sessions, and resolve principals.
   </Card>
-  <Card title="Harnesses" icon="plug" href="/cli/harnesses">
-    Connect and disconnect agent harnesses, check harness status, and flush or inspect the event spool.
+  <Card title="Agents and delivery" icon="plug" href="/cli/harnesses">
+    Connect agents directly, inspect their telemetry settings, and manage the event spool.
   </Card>
-  <Card title="Account" icon="circle-user" href="/cli/account">
-    Log in and out, inspect your credential, switch projects, list organizations, and update the CLI.
+  <Card title="Account and configuration" icon="circle-user" href="/cli/account">
+    Sign in and out, switch organizations, list projects, and configure profiles.
   </Card>
 </CardGroup>
 
+## Global flags
+
+These flags work on every command:
+
+| Flag | Description |
+|---|---|
+| `-o`, `--output` | Output format: `table`, `json`, `yaml`, or `csv` |
+| `-p`, `--project` | Project override for this command (default: the current repository's binding) |
+| `--profile` | Configuration profile to use |
+| `-v`, `--version` | Print the version |
+
 ## Output formats
 
-Every command supports the `-o` flag to control output format:
-
-```text
--o table    # Human-readable table (default in a terminal)
--o json     # Machine-readable JSON
--o yaml     # YAML
--o csv      # Comma-separated values
-```
-
-When the caller is not a terminal — for example, when the output is piped to another command or consumed by a script — the CLI defaults to JSON automatically, so you never need to add `-o json` in CI or automation contexts.
-
-## Help
-
-Every command exposes a `--help` flag that prints its full usage, flags, and examples:
-
-```bash
-terma <command> --help
-```
-
-## Quick reference
-
-| Group | Commands |
-|-------|----------|
-| **Onboarding** | `terma setup`, `terma install`, `terma uninstall`, `terma doctor`, `terma status`, `terma hook <event>` |
-| **Insights** | `terma usage`, `terma session list`, `terma session get`, `terma session events`, `terma session git`, `terma principal find` |
-| **Harnesses** | `terma connect`, `terma disconnect`, `terma harness status`, `terma spool flush`, `terma spool status` |
-| **Account** | `terma login`, `terma logout`, `terma whoami`, `terma project use`, `terma org list`, `terma update` |
-
-## Usage example
-
-The `terma usage` command sums token consumption and cost over a time window, broken down by person, agent, and model:
+In a terminal, commands print human-readable tables. When stdout is not a terminal — piped to another command, or run by a script or an agent — output switches to JSON automatically, so you never need `-o json` in CI.
 
 ```bash title="terma usage --since today"
 $ terma usage --since today
@@ -63,11 +77,10 @@ SOURCE       NAME          USER ID           COST USD  INPUT    OUTPUT  CACHE RE
 claude-code  Ada           7c5c8f2e1a9b4d03  18.9180   1344655  150364  12977317    439792       14912128      77
 claude-code  Priya         b31e0d9c77a24f18  7.4400    966138   119922  8413746     246140       9745946       86
 codex        Ada           7c5c8f2e1a9b4d03  5.9220    1142646  52872   3672026     0            4867544       37
-opencode     Marco         e9a4c1207d5b3f66  3.6120    492068   57846   3006601     72264        3628779       44
 openrouter   (no user id)                    1.2840    1872240  144066  0           0            2016306       127
-TOTAL                                        37.1760   5817747  525070  28069690    758196       35170703      371
+TOTAL                                        33.5640   5325679  467224  25063089    685932       31541924      327
 ```
 
 <Note>
-  The CLI is open source. Browse the source at [https://github.com/miradorlabs/terma-cli](https://github.com/miradorlabs/terma-cli).
+  The CLI is open source under the MIT license. Browse the source at [github.com/miradorlabs/terma-cli](https://github.com/miradorlabs/terma-cli). An agent-facing guide to the CLI is published at [terma.ai/cli/llms.txt](https://terma.ai/cli/llms.txt).
 </Note>

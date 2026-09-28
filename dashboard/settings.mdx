@@ -1,0 +1,78 @@
+---
+title: "Settings: principals, connections, and your organization"
+sidebarTitle: "Settings"
+description: "Map identities to people, manage server keys, CLI logins, and the GitHub connection, and manage your organization's members and roles."
+---
+
+**Settings**, at the bottom of the left rail, has four pages: **Project**, **Principals**, **Connections**, and **Organization**.
+
+## Project
+
+The project page links to the other settings pages. Organization admins can also delete the project here: type the project's name to confirm, then select **Delete project permanently**.
+
+## Principal mapping
+
+A principal is an identity a source reported — a user seen by Claude Code, a user seen by Codex, or an API key seen by OpenRouter. The **Principals** page maps each one to the organization member it belongs to. The mapping applies across the whole organization.
+
+| Column | Description |
+|---|---|
+| **Identity** | The name or email the source reported |
+| **Type** | **User** or **API key** |
+| **Source** | The source that reported it |
+| **Seat** | The organization member it belongs to |
+| **Alias** | A friendly, URL-safe name to show instead |
+| **Status** | **Seated**, **Alias only**, **Unmapped**, or **Unknown seat** |
+
+When several identities are seated to one person, they roll up as that person across every metric, in every project. For example, seat an OpenRouter API key to the person who owns it so their OpenRouter usage sits alongside their Claude Code and Codex activity.
+
+Only organization admins can change the mapping; everyone else sees it read-only. The Overview shows a banner when a project has unmapped principals.
+
+<Tip>
+  From the CLI, `terma principal list` and `terma principal find` show the catalog, including aliases. `--user` on `terma usage` and `terma session` accepts an alias as well as a name or id.
+</Tip>
+
+## Connections
+
+### Repositories
+
+Start inside your repository: run `terma install` there. It works with GitHub, GitLab, Bitbucket, self-hosted Git, and local repositories. To see pull requests beside your telemetry, connect GitHub here too — see [Connect GitHub](/dashboard/pull-requests#connect-github).
+
+**Project setup** at the top of the page reopens the setup guide for connecting your first tools.
+
+### Telemetry sources
+
+Lists each source that has sent telemetry to the project, with the service name it reports as, whether it reports cost, and whether Terma's mapping for it is verified.
+
+### Server keys
+
+A server key is what an agent or tool exports telemetry with. It is scoped to this project and can only send telemetry — it cannot read anything. The page shows the settings a tool needs:
+
+```bash
+OTEL_EXPORTER_OTLP_ENDPOINT="https://otel.terma.ai"
+OTEL_EXPORTER_OTLP_HEADERS="Authorization=Bearer <server key>"
+```
+
+To create a key, enter a name — for example the machine or tool it is for — and select **Create key**. **The full key is shown only once**, so copy it before you select **Done**.
+
+The keys table shows each key's name, prefix, status, when it was created, and when it was last used. **Revoke** a key to stop it working; a revoked key can be re-activated.
+
+<Note>
+  `terma install` and `terma connect` create keys for you, named after the agent and machine, and store them in your home directory. `terma disconnect` leaves the key active, since it may be used elsewhere — revoke it here when you no longer need it.
+</Note>
+
+### CLI logins
+
+Lists the active `terma` CLI sign-ins for your account, each with its label (by default, the machine's hostname) and when it was last used.
+
+## Organization
+
+Open **Settings → Organization**, or **Organization settings** from the organization switcher in the top bar.
+
+- **Organization name** — admins can rename the organization.
+- **Invite members** — admins invite people by email. Invitees join as members, and don't need a beta invite code.
+- **Pending invitations** — resend or revoke invitations that haven't been accepted.
+- **Members** — each member's role, status, and when they joined. Admins can change a member's role between **Admin** and **Member**, or remove them.
+
+Members who are not admins see the page read-only.
+
+To delete an organization, select **Request deletion**; deletion is handled by Terma support.

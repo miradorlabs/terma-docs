@@ -1,0 +1,69 @@
+---
+title: "What Terma collects and how it is protected"
+sidebarTitle: "Privacy and security"
+description: "What leaves your machine, what stays local, how credentials and keys are stored, and the switches that control prompt and tool content."
+---
+
+Terma collects two kinds of data from your machine: **telemetry** exported by your coding agents, and **hook events** recorded by Terma's own hooks. They follow different rules.
+
+## What hooks record
+
+Terma's hooks report structure, not conversation: session ids, file paths an agent edited, tool names, timings, models, and your plan's usage windows. Hooks do not open prompts, tool input or output, error text, or transcripts.
+
+The one exception is Codex, whose export leaves out the assistant's replies. When — and only when — Codex already exports your prompts for the repository, Terma's Codex hook reads that turn's replies from Codex's local session log so the conversation is complete. `--prompts off` withholds them too.
+
+## What agents export
+
+Prompt text, model responses, and tool content reach Terma only through the agent's own telemetry export, under the switches you chose:
+
+| Switch | Effect |
+|---|---|
+| `terma install --prompts off` | Stop sending prompt text and model responses for this project |
+| `terma install --prompts on` | Send them again (the default for a first install) |
+| `terma install --exclude-tool-content` | Stop sending tool parameters, input, and output |
+| `terma install --signals <list>` | Export only some of `traces`, `logs`, and `metrics` |
+
+Your agents send prompt text and model responses **by default**. `install` does not ask; it keeps your last choice for the project and prints how to change it on its **Prompts** line.
+
+A repository can also commit a policy that narrows what is sent for everyone who works in it. See [Repository-local policy](/cli/harnesses#repository-local-policy).
+
+<Note>
+  Codex can stop exporting tool output but cannot suppress native tool arguments. Cursor and Antigravity hooks never read prompt, response, or command text.
+</Note>
+
+## What every commit sends
+
+`post-commit` records an event for **every** commit so Terma can measure how much work agents contributed. For a commit with no agent session in it, that event carries only the commit's identity and size: SHA, remote URL with credentials removed, branch, author email, file count, and lines added and deleted. File names and per-file stats are included only on commits that carry a session trailer. Merge and squash commits produce nothing.
+
+## What stays on your machine
+
+| Item | Where | Protection |
+|---|---|---|
+| CLI credential (organization-scoped) | `~/.config/terma/credentials.json` | Readable only by you (`0600`); access tokens last one hour |
+| Project server keys (`ter_srv_…`) | `~/.config/terma/keys.json` and helper scripts | `0600` / `0700`; write-only for telemetry, scoped to one project |
+| Queued events | `~/.config/terma/spool/` | `0600`; bounded at 16 MB; content held at most 14 days |
+
+Nothing secret is ever written into a repository. The committed `.terma/settings.json` names only the project, and the committed hook files are inert on a machine without `terma`.
+
+A server key is write-only: it can send telemetry into its one project, but cannot read anything. Revoke a key from your project's settings in the Terma web app.
+
+## Sign-in
+
+`terma setup` and `terma login` use a browser handoff with PKCE. You approve the CLI in your browser, and a single-use code valid for 60 seconds is handed to a listener on `127.0.0.1`. The code is useless without a verifier that never leaves the CLI process. `terma logout` revokes your sessions on the server, not just locally.
+
+## Hooks never get in your way
+
+- Every hook ends in `|| true`, so a missing or broken `terma` never fails a commit.
+- Hooks never make a network request; they append to the local spool, which is delivered in the background.
+- `prepare-commit-msg` finishes in under 50 ms, a budget enforced in CI.
+- `TERMA_HOOKS=0` turns every Terma hook off immediately.
+
+## Limits worth knowing
+
+- **Attribution is not authentication.** Commit trailers and agent identities attribute work among colleagues. Anyone with commit access can write a trailer by hand, so treat them as who to credit the work to, not as proof of who did it.
+- **Processes running as you** can read your credentials and keys. If you run untrusted code, run `terma logout` and revoke the project key in the web app.
+- **Codex's key is visible to local processes.** Per-repository Codex routing passes the project's telemetry key as a launch argument, which any process running as your user can see while the session runs. It is a write-only, project-scoped key that you can revoke.
+
+## Reporting a vulnerability
+
+Do not open a public issue. Email [security@terma.ai](mailto:security@terma.ai).

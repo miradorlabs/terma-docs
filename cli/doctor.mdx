@@ -1,16 +1,10 @@
 ---
-title: "terma doctor: Verify Your Terma Setup End to End"
+title: "terma doctor: verify your setup end to end"
 sidebarTitle: "terma doctor"
-description: "terma doctor runs a scratch commit in a temporary worktree to verify that hooks, harnesses, and attribution are working — and shows the coverage percentage."
+description: "terma doctor checks every link between a coding agent and Terma — including a real scratch commit — and names the command that fixes each failure."
 ---
 
-Run `terma doctor` after setup, after merging a `terma install` PR, or any time you want to confirm the full attribution chain is working. It steps through every link from machine auth to dashboard attribution, names exactly what it checked, and — on any failure — tells you the one command that fixes it.
-
-## What it does
-
-`terma doctor` runs a series of checks in sequence. For each check it reports the name of what was verified and a pass or fail result. On failure, the output includes both what went wrong and the exact CLI command to resolve it.
-
-At the end, `terma doctor` runs a **scratch commit** in a temporary worktree. The scratch commit exercises the full hook pipeline — `prepare-commit-msg` appends the session trailer, `post-commit` spools the event, and Terma confirms the attribution landed in the dashboard. Each hook is a one-liner that calls `terma hook <event>`, so all logic lives in the binary and stays up to date when you run `terma update`. The final line shows the **coverage percentage**: the share of commits Terma expects to attribute based on your current configuration, calculated before any real commit lands.
+Run `terma doctor` after `terma install`, after upgrading, or whenever spend or trailers are not showing up. It checks every link between your coding agents and the Terma backend, reports each check as it runs, and ends with the steps that remain. Every failure names the command that fixes it.
 
 ## Usage
 
@@ -18,39 +12,70 @@ At the end, `terma doctor` runs a **scratch commit** in a temporary worktree. Th
 terma doctor
 ```
 
-## Checks performed
+Run it inside a repository you installed Terma in. Outside one, the repository checks are skipped.
 
-- **Machine is signed in** — Verifies a valid credential exists on this machine. Fix: `terma login`
-- **Project is selected** — Confirms a project is set for subsequent commands. Fix: `terma project use`
-- **At least one harness is connected** — Checks that one or more agent integrations are active. Fix: `terma harness status` to see what is connected, then `terma connect` to add one
-- **Repository hooks are installed and executable** — Verifies `prepare-commit-msg` and `post-commit` exist in `.git/hooks` (or your hook manager) and have executable permissions. Fix: `terma install`
-- **prepare-commit-msg produces correct trailers** — Runs the hook against a synthetic commit message and checks that `Agent-Session-Id` and `Agent-Tool` trailers appear in the output
-- **post-commit delivers events to the spool** — Confirms the hook writes events to the local spool without error
-- **Spool can reach Terma** — Makes an outbound connectivity check to the Terma ingest endpoint. Fix: check network or proxy settings, then `terma spool flush`
-- **Scratch commit attribution appears in the dashboard** — Creates a real commit in a throwaway worktree, spools its events, and waits for the dashboard to confirm attribution landed
+## Flags
 
-## Coverage figure
+| Flag | Description |
+|---|---|
+| `--skip-commit` | Do not make a scratch commit in a temporary worktree |
 
-After all checks pass, `terma doctor` prints the **coverage percentage** — an estimate of how many of your future commits Terma will be able to attribute, given the harnesses and hooks currently configured. A higher number means more of your team's AI activity will appear in usage reports and the burn map.
+## Checks
 
-## Failure output
+Checks run in this order. Each reports `ok`, `warn` (works today but only in part, or not for long), `FAIL`, or `skip` (did not apply here — not the same as passing).
 
-When a check fails, the output follows a consistent format:
-
-```text
-✗  prepare-commit-msg produces correct trailers
-   The hook ran but no Agent-Session-Id trailer was found in the output.
-   Fix: terma install --dry-run to inspect the hook, then terma install to reinstall.
-```
-
-Every failing check includes the check name, a plain-English description of what was missing, and the exact command to run.
+| Check | What it verifies | Usual fix |
+|---|---|---|
+| **terma on PATH** | Hooks can find `terma` by name, and it is the same build you are running | The command doctor prints to add the install directory to `PATH` |
+| **saved state migrated** | Shown only when an update has a pending or failed migration of `~/.config/terma` | `terma update --refresh` |
+| **signed in** | A working credential exists for this environment | `terma setup` |
+| **repository bound** | `.terma/settings.json` names a project your account can see | `terma install` |
+| **commit hooks installed** | `prepare-commit-msg` and `post-commit` are wired through your hook manager and up to date | `terma install`, or `terma update --refresh` for out-of-date hooks |
+| **agent hooks run** | Each agent's own hooks are wired and the agent will run them — Codex and Antigravity require you to trust them from inside the agent | The trust step doctor names |
+| **agent exporting to Terma** | Each agent you use exports telemetry to Terma, to this repository's project, with at least one signal enabled | `terma install` |
+| **shell routing active** | The agent shims come before the real `claude` and `codex` binaries on `PATH` in this shell | `source` your shell startup file, or open a new terminal |
+| **Claude Code status line** | Claude Code's status line is wrapped so your plan's usage windows are captured | `terma install` |
+| **scratch commit stamped** | A real commit in a temporary worktree gets an `Agent-Session-Id` trailer | `terma install` |
+| **event spool** | The local spool accepts writes, and how much is queued | `terma spool flush` |
+| **backend receives events** | A test event is delivered to Terma and read back | Depends on the cause doctor reports |
 
 <Note>
-  Run `terma doctor` any time you change your hook setup, upgrade the CLI, or add a new harness. It is safe to run repeatedly — the scratch commit lands in a temporary worktree and is discarded automatically.
+  The scratch commit runs in a temporary worktree that is removed afterwards. Your branch, index, and working tree are never touched.
 </Note>
 
-For a lighter-weight check that does not run a scratch commit, use `terma status`. It shows which agents and harnesses are connected, what is queued in the spool, and the predicted coverage without exercising the full hook pipeline.
+## Example output
 
-```bash
-terma status
+```text
+  FAIL  signed in                 no credential for this environment
+                                  → terma setup
+  FAIL  repository bound          no .terma/settings.json in /Users/ada/src/payments-api
+                                  → terma install
+  skip  commit hooks installed    needs an installed repository
+  skip  agent hooks run           needs an installed repository
+  FAIL  agent exporting to Terma  Claude Code, Codex installed but not exporting to https://otel.terma.ai
+                                  → terma install
+  skip  shell routing active      needs an installed repository
+  warn  Claude Code status line   not wrapped; plan usage is not captured
+                                  → terma install
+  skip  scratch commit stamped    needs an installed repository
+  ok    event spool               0 queued, spool writable
+
+Setup needs attention:
+  - terma setup
+  - terma install
+Error: some checks failed
 ```
+
+`terma doctor` exits with a non-zero status when any check fails, so you can use it in scripts.
+
+## What doctor catches that is easy to miss
+
+- **`terma` is not on `PATH`.** Hooks exit quietly when they cannot find `terma`, so commits look normal but carry no trailers.
+- **An agent exports to a different project.** Telemetry goes to one place at a time. If an agent was already exporting somewhere else, doctor says so rather than letting everything look wired while no spend arrives.
+- **Routing is configured but not active.** The shell you are in has not read the startup file yet, or a later `PATH` entry puts the real agent binary ahead of the shim.
+- **Committed hooks are older than your `terma`.** Run `terma update --refresh` and commit the result.
+- **Another `terma` build elsewhere on the machine.** An older copy that hooks find first may stamp commits but fail to read the current binding format.
+
+## doctor or status?
+
+[`terma status`](/cli/status) is the quick, read-only view: it writes nothing and makes no scratch commit. Use `doctor` when you need proof that hooks run and events reach Terma.

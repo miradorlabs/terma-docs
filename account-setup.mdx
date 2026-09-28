@@ -1,65 +1,69 @@
 ---
-title: "Set Up Your Terma Account, Projects, and Team Access"
-sidebarTitle: "Account Setup"
-description: "Create your Terma workspace, invite teammates, configure projects, manage organization settings, and get your team onboarded to the CLI."
+title: "Set up your organization, projects, and team"
+sidebarTitle: "Account setup"
+description: "Structure your Terma organization into projects, invite teammates and manage roles, onboard every engineer's machine, and map identities to people."
 ---
 
-Account setup covers everything between signing up and having your full team tracked: creating your workspace, structuring it into projects, getting engineers onboarded to the CLI, and understanding how Terma identifies the people behind your AI activity. Work through these sections in order the first time, or jump to a specific topic if you're returning to adjust an existing setup.
+Account setup covers everything between signing up and having your whole team tracked: your organization, its projects, its members, each engineer's machine, and how Terma ties identities to people.
 
-## Creating Your Account
+## Your organization
 
-Sign up for free at [https://dev.terma.ai/sign-up](https://dev.terma.ai/sign-up). You can authenticate using GitHub or Google OAuth, or register with an email address and password. No credit card is required at any point during signup.
+When you first sign up, Terma creates an organization for you and asks you to **Name your organization**. Everything else lives inside it: projects, members, the GitHub connection, and principal mapping.
 
-After you authenticate, Terma provisions your workspace and creates a default project. You can rename the project, add repositories, and invite team members from the dashboard immediately after signing up.
+You can belong to several organizations. Switch between them with the organization switcher in the top bar, or create another with **New organization**. From the CLI, `terma org list` and `terma org use` do the same.
 
 ## Projects
 
-Projects are the primary organizational unit in Terma. Each project groups a set of repositories and the team members who work in them, and all usage reports, findings, and budget envelopes are scoped to a project.
+A project is where activity lands. Every session, usage figure, and attributed commit belongs to one project. Use separate projects to separate products, teams, or anything you want to report on separately.
 
-To select which project the CLI reads from and writes to, run:
+- **Create a project** from your organization's home page with **New project**. Terma opens a setup guide for connecting your first tools.
+- **Bind a repository** to a project by running `terma install` in it. The binding is saved in the committed `.terma/settings.json`, so everyone who works in the repository reports to the same project.
+- **Change a repository's project** by running `terma install` again and choosing another, then committing the change.
+- **Delete a project** from its **Settings** page. Only organization admins can delete projects.
 
-```bash
-terma project use <name>
-```
+There is no "current project" in the CLI: commands use the project the current repository is bound to, or `--project` for a one-off. See [Projects and repository bindings](/cli/project).
 
-The active project persists across CLI sessions until you change it. The dashboard always reflects activity scoped to the project you're currently viewing, matching the CLI selection.
+## Members and roles
 
-Use separate projects to isolate distinct products, teams, or billing boundaries — for example, one project per engineering squad, or one per product line.
+Invite teammates from **Settings → Organization** (or during onboarding). Enter their email addresses and select **Send invite**. Invited people join as members and don't need a beta invite code.
 
-## Team Members
+| Role | Can |
+|---|---|
+| **Admin** | Rename the organization, invite and remove members, change roles, manage the GitHub connection and principal mapping, and delete projects |
+| **Member** | Create and use projects; organization settings and principal mapping are read-only |
 
-Engineers onboard individually. Each developer runs `terma setup` once on their own machine to sign in, bind their identity, and connect their local coding agents:
+Pending invitations can be resent or revoked. To delete an organization, select **Request deletion** in its settings; deletion is handled by Terma support.
 
-```bash
-terma setup
-```
+## Onboarding each engineer
 
-You only need to run `terma install` once per repository. Once that pull request is merged, every engineer who has completed `terma setup` is automatically covered — Terma matches their agent sessions to their identity through the credentials they established during setup.
-
-There is no separate invitation flow to complete before an engineer can run `terma setup`. Share the [quickstart](/quickstart) with your team and ask each person to run through steps 3 and 4 on their own machine.
-
-## Identity and Principals
-
-Terma tracks activity through **principals** — named identities associated with a person. One engineer can appear as multiple principals if they use different tools or accounts: for example, the same person might be a Claude Code principal under one email and a Codex principal under another.
-
-To resolve a name, email, alias, or ID to all the principals Terma associates with that person, run:
+Once the files `terma install` wrote are merged, each engineer does two things on their own machine:
 
 ```bash
-terma principal find <name>
+# 1. Install the CLI (or use Homebrew or npm)
+curl -fsSL https://terma.ai/install.sh | bash
+
+# 2. In the repository
+terma install
 ```
 
-This is useful when reviewing usage reports and you want to confirm that all of a teammate's activity — across tools and providers — is being attributed correctly to a single person.
+`terma install` signs them in, asks which agents they use, and sets up their own keys and agent routing, without rewriting the committed files. Optionally, `terma setup` signs them in and records their agents once, so `install` never has to ask.
 
-## Organizations
+<Warning>
+  An engineer who has the committed hooks but has not run `terma install` gets no telemetry, and their hook events are held locally until a key exists. `terma status` and `terma doctor` say so.
+</Warning>
 
-Organizations sit above projects and let you manage multiple teams or business units from one Terma account. To see every organization your credential belongs to, run:
+## Identities and principal mapping
 
-```bash
-terma org list
-```
+Sources report identities, not people. The same engineer may be `ada@example.com` to Claude Code, a different user id to Codex, and an API key to OpenRouter. Each identity is a **principal**.
 
-Use organizations for multi-team setups where separate projects need to share billing, access controls, or consolidated reporting at the company level.
+Organization admins map principals to members on **Settings → Principals**: seat each identity to the member it belongs to, or give it an alias. Identities seated to one person roll up as that person across every metric, in every project. The Overview shows a banner when a project has unmapped principals.
+
+From the CLI, `terma usage --user ada` already matches every principal that shares Ada's name or email. Use `terma principal find` to see what a name resolves to.
 
 <Note>
-  Traffic attributed to an API key rather than a named person shows as `(no user id)` in usage reports. Use `--group api-key` to identify which key is responsible for that spend and determine whether it needs to be tied to a principal.
+  Traffic attributed to an API key rather than a person shows as `(no user id)` in `terma usage`. Run `terma usage --group-by api-key` to see which key, then seat the key to its owner in principal mapping.
 </Note>
+
+## Keys and sign-ins
+
+**Settings → Connections** lists the project's **server keys** — what agents and tools export telemetry with — and your active **CLI logins**. Revoke a server key there when a machine or tool no longer needs it. See [Settings](/dashboard/settings#connections).

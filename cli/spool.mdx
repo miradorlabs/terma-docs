@@ -1,62 +1,75 @@
 ---
-title: "terma spool: Inspect and Flush the Local Event Queue"
+title: "terma spool: inspect and flush queued events"
 sidebarTitle: "terma spool"
-description: "terma spool flush and spool status let you inspect and force delivery of queued session events that the background flush delivers to Terma with backoff."
+description: "Hooks never touch the network: they append events to a local spool that is delivered in the background. terma spool status and flush inspect and deliver it."
 ---
 
-Post-commit hooks append events to a local spool file rather than making a live network call. A background process then delivers those events to Terma with exponential backoff, so activity data reaches the dashboard even when connectivity is intermittent. The `terma spool` commands let you inspect the queue and force immediate delivery when you need events to appear right away.
+Terma's hooks never talk to the network. They append events to a local spool and exit, and the spool is delivered later — in the background after a commit or a session ends, or on demand with `terma spool flush`. A backend outage costs nothing at commit time.
 
-## How Spooling Works
+`terma spool` is an advanced command: it works as documented but is not listed in `terma --help`.
 
-Understanding the spool lifecycle helps you diagnose gaps in the dashboard and resolve delivery issues quickly.
+## How the spool works
 
 <Steps>
-  <Step title="Event appended">
-    When a `post-commit` hook fires, it writes a spool event to the local queue. No network call is made at this point, so commit performance is never affected by network conditions.
+  <Step title="Hooks append events">
+    Agent hooks and commit hooks write events to the spool under `~/.config/terma/spool/`. No network call is made, and `prepare-commit-msg` finishes in under 50 ms.
   </Step>
   <Step title="Background delivery">
-    A background flush process picks up queued events and delivers them to Terma. If a delivery attempt fails, the process retries with exponential backoff and leaves the event in the queue until it succeeds.
+    After a commit or a session end, a detached background process delivers queued events — one request per project, using that project's key. A failed delivery backs off for that project only; every other project's events are still delivered.
   </Step>
-  <Step title="Confirmation">
-    Once Terma acknowledges an event, it is removed from the spool. The session and commit data become visible in the dashboard.
+  <Step title="Held, not dropped">
+    Events for a project that has no key on this machine yet are held until one exists, rather than dropped. Running `terma install` in that repository creates the key.
   </Step>
 </Steps>
 
-<Note>
-The post-commit hook never blocks on Terma being reachable. Commit performance is not affected by network conditions.
-</Note>
+The spool is bounded at 16 MB; when it is full, the oldest events are dropped so a long outage cannot fill your disk. Expired, pruned, malformed, and unroutable events are reported, never presented as delivered.
 
 ## terma spool status
 
-Show what is currently queued and when the last delivery attempt was made.
+Shows what is queued.
 
 ```bash
 terma spool status
 ```
 
-The output includes:
+```text
+Queued events:   42 (18 KB)
+Project keys:    2
+Held:            3 events for project 3f59… — no key here yet (run `terma install` in that repository)
+```
 
-| Field | Description |
+Depending on the state of the queue, `status` can also report:
+
+| Line | Meaning |
 |---|---|
-| Pending Events | Number of events waiting to be delivered |
-| Oldest Event | Age of the oldest undelivered event |
-| Last Attempt | Timestamp of the most recent delivery attempt |
+| `Backing off` | The last delivery failed; the next automatic attempt waits until the time shown |
+| `Retrying` | A specific project's last delivery failed and it is waiting out its retry window |
+| `Held` | Events for a project with no key on this machine |
+| `Unroutable` | Events with no project id; they cannot be delivered and leave the queue at the next flush |
 
 ## terma spool flush
 
-Force immediate delivery of all queued events to Terma, bypassing the backoff schedule.
+Delivers everything queued now, one request per project.
 
 ```bash
 terma spool flush
 ```
 
-Use `terma spool flush` after a prolonged outage, after restoring network connectivity, or when you want commits to appear in the dashboard without waiting for the next automatic delivery window.
+| Flag | Description |
+|---|---|
+| `--force` | Ignore the failure backoff and retry now |
+| `--min-interval <duration>` | Skip when a flush completed more recently than this |
+| `--quiet` | Never print or fail (used by background flushes) |
 
-```bash title="Check the queue then flush it"
-terma spool status
-terma spool flush
-```
+### Exit codes
+
+| Code | Meaning |
+|---|---|
+| `0` | Everything queued was delivered, including when nothing was queued |
+| `1` | Delivery failed for at least one project; its events stay queued and it backs off, while other projects' events are delivered |
+| `2` | Nothing was attempted because an earlier failure's retry window is open (`--force` overrides) |
+| `3` | The pass ran but left work: events held for a project key, waiting out a retry window, or given up on for age, disk pressure, or being unreadable |
 
 <Tip>
-If events are stuck in the spool, run `terma doctor` — it checks connectivity and shows the exact fix command.
+  If events seem stuck, run `terma doctor`. Its **event spool** and **backend receives events** checks show whether the spool accepts writes and whether events reach Terma, with the command that fixes each problem.
 </Tip>

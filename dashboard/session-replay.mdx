@@ -1,109 +1,80 @@
 ---
-title: "Replay and Inspect AI Sessions in Terma's Dashboard"
-sidebarTitle: "Session Replay"
-description: "Use Terma's session replay to step through every prompt, tool call, file edit, and model response in a coding session with cost and token context."
+title: "Sessions and session replay"
+sidebarTitle: "Sessions"
+description: "Browse every agent session in a project, then open one to see its cost, token timeline, subagents, files, git activity, and a full replay."
 ---
 
-Session replay gives you the full timeline of any AI coding session — every prompt sent, every model response received, every file touched, and every tool call made — alongside the token counts and cost that went with it. Whether you're auditing an unexpected bill, debugging a flaky agent run, or understanding why a session ballooned, replay puts the complete record in front of you.
+The **Sessions** page lists every agent session in the project with what it used and cost. Open a session to replay it: every prompt, response, and tool call in order, alongside its token timeline, files, and git activity.
 
-## Navigating to a Session
+## The sessions list
 
-Open the **Sessions** view in the dashboard. Sessions appear in reverse-chronological order, most recently active first.
+At the top, four cards summarize the period: **Active now** (sessions reporting in the last 10 minutes), **Model calls**, **Tokens burned**, and **Spend** (or **Net spend**, or **Output tokens**, depending on the usage view). Totals count whole sessions.
 
-Use the filter bar to narrow the list:
+### Finding sessions
 
-- **Person** — filter to a specific engineer or principal
-- **Date range** — pick a preset (today, yesterday, last 7 days) or a custom window
-- **Source** — limit to a single integration (Claude Code, Codex, Cursor, OpenCode, OpenRouter)
-- **Model** — show only sessions that used a given model
+- **Search** across sessions, users, models, and repositories.
+- **Harness chips** — **All harnesses**, or one per source — appear when more than one source reported.
+- **Filters** for model, provider, effort, client, or person appear as removable chips when you arrive from a link on another page, such as a model or person.
+- **Sort** by cost (or tokens) or by time.
 
-Click any row to open the session's replay view.
+### Columns
 
-## Session Timeline
-
-The timeline displays every event in the order it occurred during the session. Each entry shows its timestamp, type, and a one-line summary.
-
-Filter the timeline by event type using the tabs at the top:
-
-| Tab | What it shows |
+| Column | Description |
 |---|---|
-| **All** | Every event in the session, unfiltered |
-| **Conversation** | Prompts and model responses, in order |
-| **Tools** | Every tool call — file reads, edits, bash commands, and any agent-specific tools |
-| **Errors** | Tool failures, context-window errors, and model refusals |
+| **Session** | The session's title and source |
+| **Model** | The model it used |
+| **User** | The person or API key it is attributed to |
+| **Client** | The agent and its version |
+| **Active** | When it was last active |
+| **Turns** | Prompts from the person |
+| **Tokens** | Total tokens (hidden in the Tokens view, where cost shows tokens instead) |
+| **Cost** | Spend in the current usage view |
 
-Expand any event to read the full content.
+Rows blink when new activity arrives. A session that spawned subagents has an **N subagents** toggle that expands its tree; the parent's totals include its subagents.
 
-## Token Timeline
+Expand a row to see its recap, timing (duration, started, last active), git activity (commits, pushes, branches, repositories), work (tool calls, model calls, subagent runs, cached tokens, files touched, effort, who billed it, client version), and usage over time by model.
 
-The token timeline sits above the event list as a visual chart. It plots token usage across the session so you can spot the moments where context grew large or a prompt spike occurred.
+## Session detail
 
-- **Click** any point on the chart to jump to that message in the event list
-- **Drag** to select a range and see the aggregate token count for that slice
-- The chart annotates the **peak token count** and the model in use at that point
+Open a session to see its full record. **Copy session ID** copies the id used by `terma session` commands and commit trailers.
 
-If a session switched models mid-run, each segment is color-coded to its model.
+### Summary
 
-## Key Stats
+- **Session cost** — a breakdown of the session's cost by how it was funded: **Subscription**, **Prepaid credits**, **Metered**, or **Funding unknown**. An **Estimated** badge means Terma priced tokens the source did not price itself. In the Tokens view this becomes **Session tokens**.
+- The source and model, activity span, turns, tokens (with the share read from cache), and counts of files, commits, pull requests, models, and subagents.
+- For sessions with subagents, an **agents table** lists each agent's model, tokens, and own cost.
 
-The stats panel in the top-right corner of the replay view summarizes the whole session at a glance:
+### Token timeline
 
-| Stat | Description |
+The token timeline charts the session's token usage over time by type — cache read, input, cache write, output — with markers where subagents were spawned and where git actions happened.
+
+- **Click** a point to peek at what happened there, and step to the previous or next event.
+- **Drag** to select a range; the replay below narrows to it.
+
+When a session has subagents, an **Agent execution** chart shows when each agent ran, as a timeline or by token usage. Drag to zoom.
+
+### Session replay
+
+The replay shows the session's events in order. Filter it to **All**, **Conversation**, **Tools**, or **Errors**, search messages, tools, and files, and expand or collapse tool calls. Navigation buttons jump between your prompts, and **Expand reader** widens the transcript.
+
+Compactions — where the agent summarized earlier context to make room — appear as a short note in the transcript. Content appears only if the agent was configured to export it; see [Privacy and security](/concepts/privacy).
+
+### Sidebar
+
+| Panel | What it shows |
 |---|---|
-| **Total messages** | Number of conversational turns |
-| **Tool calls** | Count of tool invocations |
-| **Prompts** | Number of user-initiated prompts |
-| **Input tokens** | Tokens sent to the model |
-| **Output tokens** | Tokens returned by the model |
-| **Cache read** | Tokens served from the prompt cache |
-| **Cache write** | Tokens written to the prompt cache |
-| **Cost** | Total USD cost for the session |
-
-## Tool Call Detail
-
-Expand any tool call in the **Tools** tab to inspect it fully:
-
-- **Input** — the exact arguments passed to the tool
-- **Output** — the full result returned (truncated for large outputs, with a "Show full" option)
-- **Duration** — wall-clock time the tool call took
-- **Token cost** — input and output tokens attributed to this call
-
-This is useful for spotting expensive file reads, long-running bash commands, or tool calls that returned errors and triggered retry loops.
-
-## Searching Within a Session
-
-Use the search bar at the top of the timeline to find content within the session. Search matches across:
-
-- Message content (prompts and responses)
-- Tool call inputs and outputs
-- File paths mentioned or edited
-
-Matches are highlighted in the timeline and you can step through them with the arrow keys.
-
-## Full Session View
-
-When a session used context compaction — where the agent summarized earlier context to make room for new turns — the timeline shows only the active window by default. Toggle **Show full session** to expand the view and include compacted turns, so you can trace the complete arc of the work from start to finish.
+| **Model usage** | Calls and tokens per model, and the providers that served them |
+| **Files changed** | Files created, edited, removed, or only read; select one to filter the replay to it |
+| **Git activity** | Branches, commits, pushes, and pull requests the session produced, with an **AI co-authored** flag |
+| **Tokens by cache tier** | How the session's tokens split across cache tiers |
+| **Observed performance** | Average model call time, time to first token, tool result time, and compactions |
 
 ## From the CLI
 
-The same session data is available in your terminal. Use `terma session events` with the session's routing key:
-
-```bash
-terma session events 018f3a2c-7d4e-7a1b-9c3d-2e5f6a7b8c9d
-```
-
-Add `--tools-only` to focus on tool calls and skip the conversational turns:
-
-```bash
-terma session events 018f3a2c-7d4e-7a1b-9c3d-2e5f6a7b8c9d --tools-only
-```
-
-To find a session's routing key by person, use `terma session list`:
-
 ```bash
 terma session list --user ada --since yesterday
+terma session events <session-id> --source claude-code --tools-only
+terma session git <session-id> --source claude-code
 ```
 
-<Tip>
-Use `terma session git` with the same routing key to see the git commits and GitHub actions the session performed — useful for linking a session's work to the code it produced.
-</Tip>
+See [`terma session`](/cli/sessions).
