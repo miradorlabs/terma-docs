@@ -1,69 +1,65 @@
 ---
-title: "Entitlement Portfolios: AI Cost Tracking Across Providers"
-sidebarTitle: "Entitlements"
-description: "Terma models each engineer's AI entitlement portfolio — subscriptions, metered keys, and prepaid balances — and tracks spend across all providers."
+title: "Funding and cost views"
+sidebarTitle: "Funding and cost"
+description: "How Terma prices agent usage, tells subscription-covered spend from metered spend, and tracks your plan's allowance windows."
 ---
 
-A typical engineer on an AI-enabled team does not have one AI rail — they have several. They might hold a Claude Max subscription for interactive work, a Codex seat provisioned by their organization, an OpenRouter prepaid balance for experiments, and a raw Anthropic API key they set up before any of the above existed. Each rail has different pricing, different throttling behavior, and a different owner. Without a unified model, spend is invisible, throttles are surprising, and governance is guesswork. Terma models the full entitlement portfolio for every engineer and reconciles activity against the rail it actually ran on.
+Most engineers pay for AI in more than one way: a Claude or ChatGPT subscription for interactive work, a metered API key for scripts, prepaid credits on a router. The same tokens cost very different amounts depending on which one paid for them. Terma records how each account is funded, so it can show both what your usage would cost at list price and what it actually adds to your bill.
 
-## Entitlement types
+## Funding modes
 
-Terma tracks three categories of entitlement:
+Every account an agent uses has one of these funding modes:
 
-| Type | Examples | What Terma tracks |
+| Mode | What it means | What Terma shows |
 |---|---|---|
-| **Subscription seats** | Claude Max 5×, Claude Max 20×, Codex seat | Percentage of usage window consumed; throttle events when the window is exhausted |
-| **Metered keys** | Anthropic API key, OpenAI API key, xAI API key | Token counts per call; dollar spend per session and per day |
-| **Prepaid balances** | OpenRouter prepaid credit | Remaining balance; burn rate; projected depletion date |
+| **Subscription** | A plan with a usage allowance, such as Claude Max 20x or a ChatGPT plan | The plan name, and each allowance window — for example **5-hour** and **7-day** — with how much is used and when it resets |
+| **Prepaid credits** | A balance that usage draws down | The credit balance |
+| **Metered** | Pay-per-token billing with no allowance, such as an API key | List price, no cap |
+| **Funding unknown** | Terma has no evidence of how the usage was paid for | Usage and list price only |
 
-## Cost bases
+A person can have several accounts for one source; each is shown separately on their [Users](/dashboard/users) page.
 
-Terma can report spend on any of three cost bases, depending on what your team needs:
+## Cost views
 
-- **Invoiced** — the actual amount billed by the provider for the activity period
-- **Amortized** — subscription seat costs spread across the window's usage, giving a per-session or per-token equivalent
-- **API-equivalent (notional)** — what the same tokens would have cost on a pay-per-token API, regardless of the rail used
+A **Usage view** control on the dashboard switches between three ways of counting, and your choice applies across every page:
+
+| View | What it counts |
+|---|---|
+| **Tokens** | Reported input, output, cache-read, and cache-write tokens, including usage without a price. It measures volume, not cost. |
+| **Notional** | The gross list price of every generation — what a metered API would charge for all of it. This is the default. |
+| **Net** | Notional minus the spend a subscription allowance already covers, so it reads as the marginal bill. Metered, prepaid, and unattributed usage stay in both. |
+
+The difference between Notional and Net is how much your subscriptions absorbed. The Overview shows that split directly, as the share of spend covered by subscription.
+
+## Where funding evidence comes from
+
+Terma learns how usage is funded from the agents themselves, when Terma is installed with the CLI:
+
+- **Claude Code** — the signed-in account and plan, read at session start, and the plan's allowance windows, read through Claude Code's status line. See [Claude Code](/integrations/claude-code#plan-usage-the-status-line).
+- **Codex** — the plan, its primary and secondary allowance windows, and credit balances, read by Terma's Codex hooks.
+
+When the effective credential is an API key rather than the subscription login, Terma does not attribute the usage to the subscription.
+
+If people run an agent without the Terma CLI, their allowance windows are **unobserved** and their usage is **Funding unknown**. The Overview shows a funding gap banner naming how many people that affects.
 
 <Note>
-  API-equivalent figures are always labeled as **notional** in the dashboard and CLI output. They are useful for comparing activity across subscription and metered rails but do not represent actual spend.
+  Cursor and Antigravity hooks do not report plan, quota, or billed cost, so their usage is never classified as subscription-covered.
 </Note>
 
-## Registering entitlements
+## How usage is priced
 
-Terma populates your entitlement portfolio from three sources:
+- **Sources that report cost** — Claude Code's telemetry, for example, or the amount OpenRouter charged — are used as reported.
+- **Everything else** is priced from Terma's catalog of list prices, per model and provider. Session costs priced this way are marked **Estimated** (or **Partly estimated**) in the dashboard.
 
-1. **Billing connections** — link your provider billing accounts to register subscription seats and prepaid balances directly
-2. **Harness hooks** — the agent integration (Claude Code, Codex, etc.) observes the model and usage metadata on each call and attributes it to the correct rail automatically
-3. **Traffic inference** — when a harness reports activity on an unrecognized key, Terma infers the entitlement type from the traffic pattern and surfaces it as a finding for you to confirm or dismiss
+**Settings → Connections** lists each telemetry source and whether it reports cost.
 
-## Cross-rail findings
+Each model's page shows its current list prices by provider and their history. See [Models](/dashboard/models).
 
-Because Terma sees all rails simultaneously, it can flag inefficiencies that are invisible when you look at any one provider in isolation:
+## From the CLI
 
-- **Seat headroom unused** — activity concentrated on metered keys or prepaid balances while a subscription seat had remaining window capacity
-- **Window throttles** — sessions stalling because an engineer hit 92% of their Claude Max window by early afternoon, causing retries and delays for the rest of the day
-- **Interactive work on metered keys** — a metered API key handling real-time, back-and-forth sessions that a subscription seat should be absorbing
-- **Personal API keys on work repositories** — inferred from traffic, flagged as a governance finding when a key not registered to the organization appears in session data
+`terma usage` reports the provider's cost for each model call that settled in the window — the same basis as the **Notional** view.
 
-<Warning>
-  Unmanaged rails (personal API keys inferred from traffic) appear as governance findings in the dashboard. They do not block activity, but they represent spend and data that falls outside your organization's visibility.
-</Warning>
-
-## Multi-provider ledger
-
-Agent activity does not always stay on a single rail. A session might start in Claude Code, route through OpenRouter, and resolve on a different model entirely. Terma treats this as one session: attributed once to the engineer and project that ran it, priced on the actual rail each call used, and surfaced as a single line in `terma usage` output. There is no double-counting and no attribution gap when a call crosses provider boundaries.
-
-```bash title="View spend by provider, person, and model"
-$ terma usage --since today
-SOURCE       NAME          USER ID           COST USD  INPUT    OUTPUT  CACHE READ  CACHE WRITE  TOTAL TOKENS  MODEL CALLS
-claude-code  Ada           7c5c8f2e1a9b4d03  18.9180   1344655  150364  12977317    439792       14912128      77
-claude-code  Priya         b31e0d9c77a24f18  7.4400    966138   119922  8413746     246140       9745946       86
-codex        Ada           7c5c8f2e1a9b4d03  5.9220    1142646  52872   3672026     0            4867544       37
-opencode     Marco         e9a4c1207d5b3f66  3.6120    492068   57846   3006601     72264        3628779       44
-openrouter   (no user id)                    1.2840    1872240  144066  0           0            2016306       127
-TOTAL                                        37.1760   5817747  525070  28069690    758196       35170703      371
+```bash
+terma usage --since 30d --group-by provider
+terma usage --since 30d --group-by api-key   # spend on API keys, such as OpenRouter keys
 ```
-
-<Tip>
-  The `openrouter (no user id)` row in the example above is a cross-rail finding waiting to happen — activity on a rail with no principal attached. Use `terma principal find` to match it to an engineer, or investigate it as an unmanaged key.
-</Tip>

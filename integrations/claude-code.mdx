@@ -1,73 +1,101 @@
 ---
-title: "Connect Claude Code to Terma for Session Tracking"
+title: "Connect Claude Code to Terma"
 sidebarTitle: "Claude Code"
-description: "Wire Claude Code to Terma using project hooks in .claude/settings.json and OpenTelemetry export to capture sessions, tool calls, and spend."
+description: "Terma captures Claude Code sessions through its native OpenTelemetry export, repository hooks for commit attribution, and a status line wrapper for plan usage."
 ---
 
-Claude Code is one of Terma's most deeply instrumented integrations. By combining lifecycle hooks with an OpenTelemetry export, Terma captures the full arc of every Claude Code session — from the first tool call to the last file write — and attributes tokens, cost, and changes to the person who ran it.
+Claude Code is fully supported: Terma receives its usage and cost through Claude Code's own OpenTelemetry export, attributes the commits it produces through repository hooks, and reads your plan's usage windows through its status line.
+
+## Set up
+
+Run `terma install` in the repository, choosing **Claude Code** when asked (or record it once with `terma setup`):
+
+```bash
+cd your-repo
+terma install --harness claude
+```
+
+Then reload your shell as `install` tells you (for zsh, `source ~/.zshrc`), commit the files it lists, and restart any running Claude Code sessions so they load the new configuration.
 
 ## How it works
 
-Claude Code supports a hooks system in `.claude/settings.json` that fires shell commands at key points in a session's lifecycle. Terma registers three events:
+Terma combines three channels.
 
-- **SessionStart** — opens a session record and starts the clock
-- **PostToolUse** — fires after every tool call (file edits, reads, shell commands) and forwards the tool payload to Terma for file attribution
-- **SessionEnd** — closes the session and flushes buffered events
+### Telemetry: Claude Code's OpenTelemetry export
 
-In parallel, `terma setup` configures Claude Code's OpenTelemetry export to point at Terma's ingest endpoint. Token counts (input, output, cache read, cache write) and per-call cost arrive through this channel and are joined to the hook-derived session record.
+Claude Code exports its own traces, events, and metrics. `terma install` points that export at the repository's Terma project by handing Claude Code a per-repository settings document through `claude --settings`. The routing is delivered by a small `claude` shim that `install` puts first on your `PATH`, so running `claude` in this repository reports to this repository's project, and running it elsewhere reports wherever that repository points.
 
-## Setup
+The project key never appears in a settings file. Claude Code fetches its OTLP headers from a helper script in `~/.config/terma/helpers/` at startup.
 
-Run `terma setup` once per developer machine. It handles hook registration and OTEL configuration automatically — no manual file editing required.
+This channel carries model calls with their token counts (input, output, cache read, cache write) and cost, tool calls, and — unless you turn them off — your prompts, Claude's responses, and tool input and output.
 
-```bash
-terma setup
-```
+### Attribution: repository hooks
 
-After setup completes, your `.claude/settings.json` will contain the following hook entries:
+`install` adds Terma's hooks to the repository's `.claude/settings.json`, which you commit:
+
+| Hook | What Terma records |
+|---|---|
+| `SessionStart` | The session begins, with its account details |
+| `PostToolUse` (matcher `Edit\|Write\|MultiEdit\|NotebookEdit\|Agent\|Task`) | The files each session edits, used to stamp commits, and subagent calls |
+| `Stop`, `StopFailure` | A turn ended, or ended on an error such as a rate limit |
+| `SubagentStart`, `SubagentStop` | Subagents the session spawns, and how each run went |
+| `SessionEnd` | The session ends; queued events are delivered |
+
+Each entry is a guarded one-liner:
 
 ```json .claude/settings.json
 {
   "hooks": {
-    "SessionStart": "terma hook session-start",
-    "PostToolUse": "terma hook post-tool-use",
-    "SessionEnd": "terma hook session-end"
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "command -v terma >/dev/null 2>&1 && terma hook session-start || true",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
   }
 }
 ```
 
-<Note>
-  Each adapter is a one-liner that shells out to `terma hook <event>`; all logic lives in the binary, so updating Terma never requires touching committed files.
-</Note>
+Hooks never read what was said — prompts, tool content, and transcripts reach Terma only through Claude Code's own export, under the settings you chose. On a machine without Terma, the hooks do nothing. Your existing hooks in the file are preserved.
 
-## OpenTelemetry export
+### Plan usage: the status line
 
-`terma setup` also points Claude Code's built-in OTEL export endpoint at Terma. This is the channel through which token counts and cost data arrive — supplementing the structural events that the hooks deliver. Both streams are joined automatically on the session ID so you see a single unified view in the dashboard.
+To capture your Claude plan's usage windows, `install` places `terma hook statusline` in front of your existing status line command in `~/.claude/settings.json`. Your renderer keeps running unchanged — its output is preserved byte for byte, prefixed by a small `t` marker. If you had no status line, Terma captures silently and shows nothing.
+
+Skip this with `terma install --no-statusline`. If your renderer is slow, set `TERMA_STATUSLINE_TIMEOUT=60s` in Claude Code's environment.
 
 ## What's captured
 
-Every connected Claude Code session contributes the following to Terma:
-
-| Signal | Detail |
+| Signal | Source |
 |---|---|
-| Session timeline | Start time, end time, duration |
-| Tool calls | File edits, file reads, shell invocations |
-| Model | Which Claude model the session used |
-| Token usage | Input, output, cache read, cache write |
-| Cost | USD cost per session, attributed to the user who ran it |
+| Sessions, turns, and subagents | Hooks and OpenTelemetry |
+| Model calls, tokens, and cost | OpenTelemetry |
+| Tool calls and their duration | OpenTelemetry |
+| Prompts and responses | OpenTelemetry, unless `--prompts off` |
+| Tool input and output | OpenTelemetry, unless `--exclude-tool-content` |
+| Files edited, for commit attribution | Hooks |
+| Plan usage windows and rate limits | Status line and hooks |
 
-## Verifying the connection
+## Controlling what is sent
 
-After running `terma setup`, confirm that Claude Code is wired correctly with two commands:
+- `terma install --prompts off` stops prompt text and model responses for this project.
+- `terma install --exclude-tool-content` stops tool parameters, input, and output.
+- `terma install --signals traces,metrics` limits which signals are exported.
+
+A repository can also narrow what is sent for everyone who works in it with a committed local policy — see [Repository-local policy](/cli/harnesses#repository-local-policy).
+
+## Verify
 
 ```bash
-terma harness status
+terma status    # the Agent line should show Claude Code exporting to this project
+terma doctor    # proves hooks stamp a commit and events reach Terma
 ```
 
-This shows all connected harnesses. Claude Code should appear with a status of **connected**.
-
-```bash
-terma doctor
-```
-
-`terma doctor` runs a scratch session end-to-end and verifies that events are flowing from Claude Code through to Terma's ingest, that the OTEL export is reachable, and that attribution is resolving correctly. Any gaps are surfaced as actionable findings.
+<Warning>
+  An IDE extension that starts Claude Code by its full path bypasses the `claude` shim and uses your machine-wide settings. `terma doctor` reports when routing is not active. Claude Code's managed settings and a custom `--settings` argument are outside what Terma can check.
+</Warning>

@@ -1,68 +1,71 @@
 ---
-title: "How Terma Works: Sessions, Attribution, and Spending"
+title: "How Terma works"
 sidebarTitle: "Overview"
-description: "Understand Terma's core model: how AI sessions are captured, attributed to people and changes, and how spend is tracked across providers."
+description: "Terma's model: organizations and projects, sources and sessions, principals, commit attribution, and funding-aware cost."
 ---
 
-Terma organizes AI engineering activity around three sequential steps: **meter** your coding agents to capture every session as it happens, **link** your repositories so git commits carry the sessions that produced them, and **watch** as automated analysis surfaces the patterns — hotspots, retry loops, throttling gaps — that tell you where AI effort is actually going. Each step builds on the last, giving your team a single attributed view that connects an engineer's prompts to the code that shipped and the cost that accrued.
+Terma connects three things that usually live apart: what your coding agents did, what it cost, and the code it produced. This page introduces the pieces and how they fit together.
+
+## Organizations and projects
+
+An **organization** is your team's workspace. Members, invitations, roles, the GitHub connection, and principal mapping belong to the organization.
+
+A **project** is where activity lands. Each repository is bound to one project by `terma install`, and every session, usage figure, and attributed commit from that repository reports there. Use separate projects for separate products or teams.
+
+Your CLI sign-in is scoped to an organization, not a project, so you can work across repositories that report to different projects without signing in again.
+
+## Sources
+
+A **source** is anything that sends telemetry to a project:
+
+- **Coding agents** — Claude Code, Codex CLI, and Codex Desktop, set up per repository by `terma install`. Cursor, OpenCode, and Antigravity have partial or advanced support.
+- **Routers and other tools** — OpenRouter, or any tool that exports OpenTelemetry, sending with a project [server key](/dashboard/settings#server-keys).
 
 ## Sessions
 
-Every conversation with a coding agent becomes a Terma session. A session records the full timeline: each prompt, every tool call, model responses, file reads and writes, token counts broken down by input, output, cache read, and cache write, and total cost in USD. Sessions are captured through harness hooks (for example, the `SessionStart`, `PostToolUse`, and `SessionEnd` hooks in Claude Code) and delivered to Terma in the background with local spooling so nothing is lost if the network drops.
+A **session** is one conversation with an agent, rolled up with its turns, model calls, tool calls, tokens, cost, subagents, and Git activity. Sessions are what everything else is built on.
 
-Sessions are the atomic unit everything else is built on. Attribution, spend tracking, budgets, and findings all start from a session.
+<Card title="Sessions" icon="messages" href="/concepts/sessions">
+  What a session contains and how it is captured.
+</Card>
 
-<Card title="Deep dive: Sessions" icon="messages" href="/concepts/sessions">
-  Learn what a session contains, how replay works, and how to query sessions from the CLI.
+## Principals
+
+Sources report identities, not people: an email seen by Claude Code, a user id seen by Codex, an API key seen by OpenRouter. Each of these is a **principal**. Organization admins map principals to members, so one person's activity across every agent rolls up as that person.
+
+<Card title="Principal mapping" icon="users" href="/dashboard/settings#principal-mapping">
+  Seat identities to the people they belong to.
 </Card>
 
 ## Attribution
 
-Knowing a session happened is only useful if you know who ran it, what code it touched, and whether that code made it into the repository. Terma solves this with a `prepare-commit-msg` git hook that intersects the files staged for a commit against the files each session touched. When there is a match, the hook appends `Agent-Session-Id` and `Agent-Tool` trailer pairs to the commit message — one pair per contributing session. Pure human work gets no trailer. Merge and squash commit messages are never modified.
+Terma's `prepare-commit-msg` hook stamps each commit with `Agent-Session-Id` and `Agent-Tool` trailers for every session that edited a staged file. Pure human work gets no trailer. The link lives in your Git history, and with the GitHub connection, Terma lines up pull requests with the sessions behind them.
 
-The result is an unbroken chain from an AI session to the commit it contributed to, preserved in the git history itself.
-
-<Card title="Deep dive: Attribution" icon="code-branch" href="/concepts/attribution">
-  Understand commit trailers, the codebase burn map, and how Terma predicts coverage before your first commit.
+<Card title="Attribution" icon="code-branch" href="/concepts/attribution">
+  How commit trailers link sessions to the code they produced.
 </Card>
 
-## Entitlements
+## Funding and cost
 
-Most engineers carry more than one AI rail: a Claude Max subscription, a Codex seat, an OpenRouter prepaid balance, a raw Anthropic API key. Terma models each engineer's full entitlement portfolio and tracks activity across all of them. For subscription seats, Terma tracks the percentage of the usage window consumed. For metered keys and prepaid balances, it tracks token counts and dollar spend. Cost can be reported on any basis — invoiced, amortized, or API-equivalent — so finance and engineering speak the same language.
+The same tokens cost different amounts depending on whether a subscription, prepaid credits, or a metered key paid for them. Terma records how each account is funded and tracks subscription allowance windows, so you can view usage as **Tokens**, at list price (**Notional**), or as the marginal bill after subscriptions (**Net**).
 
-<Card title="Deep dive: Entitlements" icon="credit-card" href="/concepts/entitlements">
-  See how Terma models subscriptions, metered keys, and prepaid balances across every provider.
+<Card title="Funding and cost views" icon="credit-card" href="/concepts/entitlements">
+  Funding modes, cost views, and how usage is priced.
 </Card>
 
-## Findings
+## How data flows
 
-Terma runs continuous analysis across sessions, attribution data, and entitlement usage to surface patterns your team would otherwise miss. Findings include:
-
-- **Hotspots** — files re-read by agents in almost every session, indicating ambiguous or poorly documented areas of the codebase
-- **Retry loops** — sessions where the agent repeatedly attempted and failed the same tool call, burning tokens without progress
-- **Redundant spend** — metered key activity that occurred while a subscription seat had remaining headroom
-- **Throttling issues** — sessions stalled because an engineer hit their usage window limit mid-afternoon
-- **Production regressions** — AI-assisted changes correlated with increased cost, loop depth, or reduced resolution rates in production
-
-Findings appear in the **Watch** view in the dashboard and are updated as new sessions arrive.
-
-## Budgets
-
-Terma lets you set spend envelopes at any level of granularity — per team, per area of the repository, or per experiment. Each budget has two thresholds:
-
-- **Soft threshold** — sends a Slack notification while the budget is still active, giving the team a chance to course-correct
-- **Hard cap** — stops the harness mid-session when the ceiling is reached
-
-Budget enforcement uses the same machinery Terma applies to production tenants, so the limits are reliable rather than advisory.
-
-<CardGroup cols={3}>
-  <Card title="Sessions" icon="messages" href="/concepts/sessions">
-    What a session contains and how to query session data from the CLI.
-  </Card>
-  <Card title="Attribution" icon="code-branch" href="/concepts/attribution">
-    How commit trailers link sessions to git history and the codebase burn map.
-  </Card>
-  <Card title="Entitlements" icon="credit-card" href="/concepts/entitlements">
-    How Terma models subscriptions, metered keys, and prepaid balances across every provider.
-  </Card>
-</CardGroup>
+<Steps>
+  <Step title="Agents export, hooks record">
+    Each agent sends usage through its own telemetry export, routed to the repository's project. Terma's hooks record session boundaries, edited files, subagents, and plan usage, and append them to a local spool without touching the network.
+  </Step>
+  <Step title="Commits are stamped locally">
+    When you commit, the hook matches staged files to sessions and adds trailers in under 50 ms. Every commit is recorded for delivery.
+  </Step>
+  <Step title="Events are delivered in the background">
+    The spool is delivered after commits and session ends, with retry and backoff. Nothing is lost if the network is down.
+  </Step>
+  <Step title="You read it back">
+    The dashboard shows sessions, people, models, pull requests, and where agent work lands in your codebase. `terma usage` and `terma session` answer the same questions from a terminal.
+  </Step>
+</Steps>

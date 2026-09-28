@@ -24,7 +24,7 @@
     "primary": {
       "type": "button",
       "label": "Sign Up Free",
-      "href": "https://dev.terma.ai/sign-up"
+      "href": "https://terma.ai/sign-up"
     }
   },
   "navigation": {
@@ -46,7 +46,8 @@
               "concepts/overview",
               "concepts/sessions",
               "concepts/attribution",
-              "concepts/entitlements"
+              "concepts/entitlements",
+              "concepts/privacy"
             ]
           },
           {
@@ -56,17 +57,22 @@
               "integrations/codex",
               "integrations/cursor",
               "integrations/opencode",
+              "integrations/antigravity",
               "integrations/openrouter"
             ]
           },
           {
             "group": "Dashboard",
             "pages": [
+              "dashboard/overview",
               "dashboard/session-replay",
+              "dashboard/users",
               "dashboard/burn-map",
-              "dashboard/breakdowns",
-              "dashboard/budgets",
-              "dashboard/production"
+              "dashboard/pull-requests",
+              "dashboard/models",
+              "dashboard/metrics",
+              "dashboard/skills-mcp",
+              "dashboard/settings"
             ]
           }
         ]
@@ -82,15 +88,17 @@
             ]
           },
           {
-            "group": "Onboarding Commands",
+            "group": "Onboarding",
             "pages": [
               "cli/setup",
               "cli/install",
-              "cli/doctor"
+              "cli/status",
+              "cli/doctor",
+              "cli/update"
             ]
           },
           {
-            "group": "Insight Commands",
+            "group": "Insights",
             "pages": [
               "cli/usage",
               "cli/sessions",
@@ -98,23 +106,38 @@
             ]
           },
           {
-            "group": "Harness Commands",
+            "group": "Account and configuration",
             "pages": [
-              "cli/harnesses",
-              "cli/spool"
+              "cli/account",
+              "cli/project",
+              "cli/configuration"
             ]
           },
           {
-            "group": "Account Commands",
+            "group": "Advanced",
             "pages": [
-              "cli/account",
-              "cli/project"
+              "cli/harnesses",
+              "cli/spool"
             ]
           }
         ]
       }
     ]
   },
+  "redirects": [
+    {
+      "source": "/dashboard/breakdowns",
+      "destination": "/dashboard/users"
+    },
+    {
+      "source": "/dashboard/budgets",
+      "destination": "/dashboard/overview"
+    },
+    {
+      "source": "/dashboard/production",
+      "destination": "/dashboard/overview"
+    }
+  ],
   "footer": {
     "socials": {
       "github": "https://github.com/miradorlabs"

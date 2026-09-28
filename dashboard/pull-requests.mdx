@@ -1,0 +1,59 @@
+---
+title: "Pull requests"
+sidebarTitle: "Pull requests"
+description: "See your repositories' pull requests alongside the agent sessions behind them, with the tokens and cost linked to each one. Requires the GitHub connection."
+---
+
+The **Pull requests** page shows your repositories' pull requests and the agent sessions behind them, so you can see what each change cost to produce.
+
+## Connect GitHub
+
+Pull request data comes from GitHub. The connection belongs to the whole organization, and only organization admins can manage it.
+
+1. Open **Settings → Connections** in any project, or select **Manage GitHub connection** on the Pull requests page.
+2. In the **GitHub** panel, select **Install on GitHub** and install the Terma app on your GitHub organization.
+3. Select **Connect GitHub** to sign in to GitHub and finish the connection.
+
+Once connected, the panel lists each connected GitHub account with its status and a **Disconnect** option.
+
+<Note>
+  GitHub is optional. Commit attribution works without it — trailers are stamped locally by `terma install`'s hooks, which work with GitHub, GitLab, Bitbucket, self-hosted Git, and local repositories. The GitHub connection adds pull requests, merges, and issues beside your telemetry.
+</Note>
+
+## Browsing pull requests
+
+Choose a repository from the **Repositories** list on the left; private repositories are marked with a lock. For the selected repository and period, three cards summarize:
+
+- **Linked session cost** (or **Output tokens** in the Tokens view) — the cost of the sessions linked to its pull requests
+- **Tokens burned** — the tokens of those sessions
+- **PRs with linked sessions** — how many pull requests agent sessions contributed to
+
+### Controls
+
+- **Group by:** **PRs** or **Sessions**
+- **State:** **All**, **Open**, or **Closed**
+- **Search** loaded pull requests by title, number, or author
+- **Sort:** **Recently updated**, **Highest linked cost**, or **Most tokens**
+
+### Columns
+
+| Column | Description |
+|---|---|
+| **Pull request** | Title, state, and author |
+| **Sessions** | Agent sessions linked to it |
+| **Linked tokens** | Tokens of those sessions |
+| **Linked USD** | Cost of those sessions (hidden in the Tokens view) |
+
+Expand a pull request to see its sessions. Each is marked **Explicit PR activity**, or **Linked to N PRs · shared usage** when the same session is linked to several pull requests.
+
+## How sessions are linked
+
+A session is linked to a pull request through confirmed Git activity from the session's own tool calls, such as the commits and pushes it made and the pull requests it opened. Open a session's replay to see that activity in its **Git activity** panel, or run `terma session git`.
+
+<Note>
+  Linked cost is the cost of the linked sessions, not a per-commit cost. When one session is linked to several pull requests, its whole usage is shown against each of them, so adding linked cost across those pull requests counts that session more than once.
+</Note>
+
+## On the Overview
+
+The project **Overview** shows **PRs merged** for the period and a **Recent pull requests** panel with the pull requests agent sessions touched in the last 7 days. See [Project overview](/dashboard/overview).

@@ -1,19 +1,15 @@
 ---
-title: "terma setup: Sign In and Connect Your Coding Agents"
+title: "terma setup: sign in and choose your agents"
 sidebarTitle: "terma setup"
-description: "terma setup signs you in through the browser, selects your project, binds your identity, and connects Claude Code, Codex, and OpenCode to Terma in one command."
+description: "terma setup signs you in through the browser and records which coding agents you use. It is optional and runs once per developer."
 ---
 
-Run `terma setup` once on each developer machine to authenticate with Terma, choose the project you want to report activity to, and wire up every coding agent you have installed. Before writing anything to disk, the command prints a checklist of what it will configure so you can review the plan first.
+`terma setup` gets a machine ready to use Terma. It does two things and nothing more — it binds no project, configures no telemetry, and writes no repository files:
 
-## What it does
+1. **Signs you in.** Your browser opens on Terma, you choose an organization and approve the CLI, and a single-use code is handed back to a listener on `127.0.0.1`. A sign-in you already approved is reused.
+2. **Records which coding agents you use**, so [`terma install`](/cli/install) never has to ask again.
 
-`terma setup` is a one-time onboarding command — one run per developer machine. It works through four steps automatically:
-
-1. **Sign in** — Opens your browser for a PKCE OAuth flow. After you approve, a single-use code completes the exchange. No password is stored.
-2. **Select project** — Asks which Terma project this machine's activity should report to. Skip this prompt with `--project`.
-3. **Bind your identity** — Maps your email and any aliases to sessions emitted by every tool Terma connects, so activity from Claude Code and Codex both resolve to you.
-4. **Connect agents** — Configures each coding agent it finds on your machine. A checklist shows every file and environment variable it will touch before anything is written.
+`setup` is optional. `terma install` signs you in and asks for your agents itself when you have not run it. The real configuration — pointing an agent at a project and wiring hooks — happens per repository, in `terma install`.
 
 ## Usage
 
@@ -21,46 +17,61 @@ Run `terma setup` once on each developer machine to authenticate with Terma, cho
 terma setup
 ```
 
+On a terminal, setup shows a checklist:
+
+```text
+Which coding agents do you use? (space toggles, enter confirms)
+```
+
+Agents it finds installed on your machine, or that you recorded before, are preselected. The available choices are:
+
+| Choice | Notes |
+|---|---|
+| **Claude Code** | Telemetry and commit attribution |
+| **Codex CLI** | The `codex` shell command |
+| **Codex Desktop** | The desktop app, which uses a separate capture path — see [Codex](/integrations/codex#codex-desktop) |
+
+Cursor, OpenCode, and Antigravity appear in the list marked **Coming Soon** and cannot be selected yet. See [Integrations](/integrations/cursor) for what is available for them today.
+
+When setup finishes, it prints the agents it recorded and the next step:
+
+```text
+Agents recorded: Claude Code, Codex.
+
+Done! Now run `terma install` in each codebase you want to instrument with terma.
+```
+
 ## Flags
 
-<ParamField query="--project" type="string">
-  Pre-select a project by name, skipping the interactive prompt.
-</ParamField>
+| Flag | Description |
+|---|---|
+| `--harness <list>` | Comma-separated agents to record, skipping the picker: `claude`, `codex`, `codex-desktop` |
+| `-y`, `--yes` | Skip the picker and record every available agent installed on this machine |
+| `--no-browser` | Print the sign-in URL instead of opening a browser |
 
-<ParamField query="--dry-run" type="flag">
-  Print the checklist of changes without writing any files or environment variables. Use this to preview what `terma setup` will do on a new machine.
-</ParamField>
+```bash title="Non-interactive setup"
+terma setup --harness claude,codex --no-browser
+```
 
-## What gets configured
+## What gets stored
 
-`terma setup` detects which agents are installed and configures only the ones it finds.
+Setup writes only to your Terma configuration directory, `~/.config/terma/`:
 
-**Claude Code** — Adds three hook entries to `.claude/settings.json` (`SessionStart`, `PostToolUse`, `SessionEnd`) and sets the OpenTelemetry export endpoint so spans flow to Terma.
+- `credentials.json` — your organization-scoped CLI credential, readable only by you (`0600`)
+- `config.json` — your profile, organization, and the agents you chose
 
-**Codex** — Registers a notify entry per turn in `.codex/hooks.json` so Terma receives an event for every Codex action.
+Nothing is written to any repository and no agent's settings are changed.
 
-**Cursor** — Writes hook entries to `.cursor/hooks.json` for `sessionStart`, `afterFileEdit`, and `sessionEnd`. Spend data arrives via the Enterprise export.
+## Next steps
 
-**OpenCode** — Registers a dependency-free plugin that exports spans over OpenTelemetry. No changes to your OpenCode configuration files are needed beyond the plugin entry.
-
-**Identity binding** — Your email and any aliases are recorded so sessions from all connected tools resolve to a single person in `terma usage` output and the dashboard.
-
-Each agent adapter is a one-liner that calls `terma hook <event>`. All hook logic lives inside the `terma` binary, so upgrading the CLI with `terma update` is the only change you ever need to make to stay current — the committed hook files never need to change.
-
-<Note>
-  Run `terma setup` once per developer machine. If you get a new machine, reinstall your tools, or move to a different Terma project, run it again to re-bind and reconfigure.
-</Note>
-
-## After setup
-
-Confirm everything is wired correctly before your first session:
+Run `terma install` in each repository you want to report to Terma, then check the result:
 
 ```bash
-# Show which agents and projects are connected
-terma status
-
-# Run end-to-end checks and see predicted coverage
+cd your-repo
+terma install
 terma doctor
 ```
 
-`terma status` lists what is connected and what is queued. `terma doctor` goes further — it runs a scratch commit in a temporary worktree and reports the coverage percentage the dashboard will attribute to you.
+<Note>
+  If you chose **Codex Desktop**, approve Terma's hooks in the app after running `terma install` in a repository: open **Settings → Hooks → Review** in Codex Desktop and approve the Terma entries.
+</Note>

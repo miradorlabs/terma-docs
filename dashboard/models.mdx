@@ -1,0 +1,57 @@
+---
+title: "Models"
+sidebarTitle: "Models"
+description: "Compare the models your agents use by calls, tokens, spend, sessions, and people, put up to four side by side, and see each model's list prices."
+---
+
+The **Models** pages show which models your agents use, how much, and at what price. **Models → Usage** lists them; **Models → Compare** puts them side by side.
+
+## Usage
+
+Search for a model, or sort by **Highest spend** (or **Most tokens**), **Most calls**, **Most sessions**, **Most people**, or **Model name**.
+
+| Column | Description |
+|---|---|
+| **Model** | The model, linking to its page |
+| **Calls** | Model calls in the period |
+| **Input tokens**, **Output tokens** | Tokens sent and received |
+| **Spend** | Spend in the current usage view (or input plus output tokens in the Tokens view) |
+| **Sessions** | Sessions that used the model |
+| **People** | People who used it; select the count to see who |
+| **Tool calls** | Tool calls made in its turns |
+| **Spend share** / **Token share** | Its share of the project's total |
+
+Tick the **Compare** checkbox on up to four models to compare them.
+
+## Compare
+
+Compare puts up to four models side by side. Pick them in the bar at the top of the page, or from the Usage list.
+
+Daily charts show each model's spend, tokens, model calls, people, share served from cache, time to first token, and failed calls. Below them, a table compares:
+
+- **What it burnt** — tokens and model calls
+- **The work in its turns** — sessions, tool calls, compactions, and subagents
+- **Per unit** — cost per million tokens, share served from cache, output per call, time to first token, and failed calls
+- **List price, per 1M tokens** — input, output, and cache prices, with a pop-up that ranks providers
+- **Where the tokens go** — the mix of input, output, cache read, and cache write
+- **Who uses it** — the people who called it
+
+Rows mark which model is **Better** or **Cheapest**, and show ratios such as **3×** or **about the same**.
+
+## A model's page
+
+Select a model to open its page:
+
+- **Called through** — the sources that used it
+- **Spend**, **Tokens**, **Sessions**, **Active users**, and **Model calls**, with spend over time
+- **Sources** and **Providers** — select one to narrow the page to it — plus principals and sessions
+- **Price history** — input, output, cache read, and cache write prices over time
+- **Current list prices** — per provider, per million tokens: input, output, cache read, cache write, and combined, with when each was observed
+
+## From the CLI
+
+```bash
+terma usage --group-by model --since 30d
+terma usage --group-by provider --since 7d
+terma session list --model claude-opus-4-1 --sort cost
+```

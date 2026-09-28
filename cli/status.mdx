@@ -1,0 +1,59 @@
+---
+title: "terma status: see what is connected"
+sidebarTitle: "terma status"
+description: "terma status is a quick, read-only view of sign-in, the repository binding, hooks, connected agents, the event spool, and remaining setup steps."
+---
+
+`terma status` shows, on one screen, how this machine and repository are set up: your sign-in, the repository's project binding, hook wiring, connected agents, the event spool, and any setup steps that remain. It writes nothing and makes no scratch commit.
+
+## Usage
+
+```bash
+terma status
+```
+
+## Example output
+
+```text
+Account:     not signed in — run `terma setup`
+Repository:  /Users/ada/src/payments-api — not installed (run `terma install`)
+Agent:       Claude Code → not connected
+Agent:       Codex → not connected
+Agent:       none connected — run `terma install`
+Spool:       0 event(s) queued
+
+Setup needs attention:
+  - terma install
+  - terma setup
+Run `terma doctor` to verify hook execution and backend delivery.
+```
+
+Once you are signed in and the repository is installed, `status` reports more lines:
+
+| Line | What it shows |
+|---|---|
+| `Account` | Your email and organization |
+| `Endpoints` | Shown only when your profile points at a non-production deployment |
+| `Repository` | The repository root and the project it is bound to, including when a Git worktree is bound through its main checkout |
+| `Hooks` | Whether commit hooks are wired, through which hook manager, and whether they are out of date with your `terma` (fix with `terma update --refresh`) |
+| `Agent hooks` | How many of your agents can run their hooks — Codex and Antigravity need you to trust them first |
+| `Session` | The agent session active in this repository, if any |
+| `Uncommitted` | Agent-edited files that will be stamped on your next commit |
+| `Agent` | One line per agent: whether it exports to Terma, and a warning if it exports to a **different** project than this repository's |
+| `Status line` | Whether Claude Code's status line is wrapped to capture plan usage windows |
+| `Routing` | Whether per-repository shell routing is active in this shell |
+| `Local` | What this repository's committed policy narrows each agent's export to |
+| `Spool` | How many events are queued for delivery |
+
+Use `-o json` for a machine-readable report.
+
+## status or doctor?
+
+| | `terma status` | `terma doctor` |
+|---|---|---|
+| Reads local configuration | Yes | Yes |
+| Writes anything | No | A scratch commit in a temporary worktree (skip with `--skip-commit`) |
+| Proves hooks stamp a commit | No | Yes |
+| Proves events reach Terma | No | Yes |
+
+Start with `status` for a quick look, and run [`terma doctor`](/cli/doctor) when you need proof.

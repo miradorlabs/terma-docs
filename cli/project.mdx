@@ -1,57 +1,82 @@
 ---
-title: "Manage Projects and Switch Context with terma project"
-sidebarTitle: "terma project"
-description: "terma project use selects the active project for all subsequent CLI commands, scoping usage queries, session lists, and harness connections to one project."
+title: "Projects and repository bindings"
+sidebarTitle: "Projects"
+description: "Each repository is bound to one Terma project by terma install. Read commands use that binding, and --project overrides it for a single command."
 ---
 
-A project in Terma groups repositories, team members, and budgets into a single attributed view. `terma project use` sets the active project context for all subsequent CLI commands, so your usage queries, session lists, and harness connections all scope to the right team without requiring a flag on every invocation.
+A Terma project is where your agents' sessions, usage, and attributed commits land. Each repository is bound to one project by [`terma install`](/cli/install), and the binding is saved in the committed `.terma/settings.json`. There is no global "current project": the project always comes from the repository you are in.
 
-## terma project use
+## How the project is chosen
 
-Select the project that subsequent commands read from.
+Every project-scoped command — `terma usage`, `terma session`, `terma principal`, `terma connect` — resolves the project in this order:
+
+1. `--project <id>` (or `-p`) on the command line
+2. The `TERMA_PROJECT_ID` environment variable
+3. The binding in the current repository's `.terma/settings.json`, found from any subdirectory
+
+An explicit `--project` or `TERMA_PROJECT_ID` applies to that command only and never changes the saved binding.
+
+```bash title="Read another project without changing anything"
+terma usage --since 7d --project 3f594407-aec5-4ab7-9d7b-9e4ebe5822f0
+terma session list --project 3f594407-aec5-4ab7-9d7b-9e4ebe5822f0
+```
+
+Outside an installed repository, pass `--project` to read project data.
+
+## Changing a repository's project
+
+Run `terma install` again. With several projects in your organization, it asks you to choose, offering the current binding first. Or name the project directly:
 
 ```bash
-terma project use <project-name>
+terma install --project "Payments API"
 ```
 
-Once set, all commands that are project-scoped — including `terma usage`, `terma session list`, and `terma harness status` — read from this project by default. `terma setup` sets the project during initial configuration, so you typically only need `terma project use` when switching between projects.
+Commit the updated `.terma/settings.json` so your teammates report to the same project.
 
-## Seeing Your Current Project
+## terma project list
 
-`terma whoami` shows the currently selected project alongside your user identity and credential scope. Check it any time you want to confirm your context before running a query.
+Lists the projects in the current organization.
 
 ```bash
-terma whoami
+terma project list
 ```
 
-## Working Across Multiple Projects
+Names are shown without ids. Use `-o json` to see ids, or when two projects share a name.
 
-If you work across multiple organizations or teams, switch projects with `terma project use` before running queries. The active project name appears in all output headers so you can confirm at a glance that results are scoped correctly.
+## terma project show
 
-```bash title="Switch to a different project"
-# Switch to a different project
-terma project use platform-team
+Shows the project the current repository is bound to.
 
-# Confirm the switch
-terma whoami
-
-# Query usage scoped to this project
-terma usage --since 7d
+```bash
+terma project show
 ```
 
-## Overriding the Project for a Single Command
+`terma project` is an advanced command: it works as documented but is not listed in `terma --help`.
 
-To query a different project without changing the persisted default, pass `--project <name>` directly to any insight command:
+## The binding file
 
-```bash title="One-off project override"
-terma usage --since 7d --project data-team
-terma session list --project data-team
+`.terma/settings.json` names the project and records what `terma install` wired. It contains no secrets.
+
+```json .terma/settings.json
+{
+  "project": {
+    "id": "3f594407-aec5-4ab7-9d7b-9e4ebe5822f0",
+    "name": "Payments API",
+    "organization_id": "88dd0f5c-c288-4384-9dc6-9713281ad1ed"
+  },
+  "install": {
+    "hook_manager": "git",
+    "hooks": ["prepare-commit-msg", "post-commit"],
+    "terma_version": "1.4.0",
+    "installed_at": "2026-09-11T17:27:09Z"
+  }
+}
 ```
 
-## Projects and Repositories
+## Worktrees
 
-A repository is bound to a project when `terma install` runs in that repository. The binding is stored in `.terma.toml` at the repo root and is picked up automatically by git hooks and harness adapters.
+A linked Git worktree — including the ones coding agents create for isolated work — uses its own `.terma/settings.json` when it has one, and otherwise its main checkout's. Everything from a worktree reports as its main repository, with an attribute naming the worktree. `terma status` and `terma doctor` say when a worktree is bound through its main checkout.
 
 <Note>
-The active project is stored in your local Terma config (`~/.config/terma/config.toml`). It persists across terminal sessions.
+  If you keep `.terma/settings.json` out of Git, tools that create worktrees from tracked files only will not copy it. Codex-managed worktrees, for example, need the file listed in `.worktreeinclude`.
 </Note>

@@ -1,28 +1,40 @@
 ---
-title: "Terma Quickstart: From Sign-Up to Live AI Tracking"
+title: "Quickstart"
 sidebarTitle: "Quickstart"
-description: "Install the Terma CLI, connect your coding agent, and wire your first repository to start capturing AI activity across your entire team."
+description: "Create your Terma organization and project, install the CLI, set up your first repository, and see your first agent session."
 ---
 
-This guide walks you through everything you need to go from a fresh signup to live AI activity tracking. By the end, the Terma CLI will be installed on your machine, your coding agent will be connected, and your repository will be wired to stamp commits with session attribution — all in under 10 minutes.
+This guide takes you from a new account to your first agent session in Terma. You will create an organization and a project, install the `terma` CLI, set up a repository, and verify that sessions and commit trailers are flowing.
 
 <Steps>
-  <Step title="Create Your Account">
-    Sign up for free at [https://dev.terma.ai/sign-up](https://dev.terma.ai/sign-up). No credit card is required. You can authenticate with GitHub, Google OAuth, or a standard email address.
+  <Step title="Create your account">
+    Sign up at [terma.ai/sign-up](https://terma.ai/sign-up) with Google, GitHub, or an email address.
 
-    Once you're in, Terma creates a default project for you. You can invite teammates and configure additional projects from the dashboard at any time.
+    Terma is in private beta. If you are asked to **Enter your invite code**, enter the code from your invite — for example `terma-7kq4-m2xp`. If an organization invited you by email, you don't need a code.
+
+    Then **Name your organization** — use your company or team name — and optionally invite your teammates by email. You can do both later from **Settings → Organization**.
+  </Step>
+
+  <Step title="Create a project">
+    On your organization's home page, select **Create a project**. Give it a name, such as the product or team it covers, tick **Development**, and select **Create project**.
+
+    Terma opens a setup guide, **Bring your first session into view**. Choose **Claude Code, Codex, Cursor, Pi, etc.** — the path for coding agents — and keep the page open: it listens for your first session.
+
+    <Tip>
+      Connecting a router such as OpenRouter, or another tool that exports OpenTelemetry? Choose **Other** instead. See [OpenRouter](/integrations/openrouter).
+    </Tip>
   </Step>
 
   <Step title="Install the CLI">
-    Choose the installation method that fits your workflow. All three methods download the same release and verify its checksum before completing the install.
-
     <CodeGroup>
-      ```bash Homebrew
-      brew install miradorlabs/tap/terma
+      ```bash Install script
+      curl -fsSL https://terma.ai/install.sh | bash
       ```
 
-      ```bash Install Script
-      curl -fsSL https://get.terma.ai | sh
+      ```bash Homebrew
+      brew tap miradorlabs/tap
+      brew trust miradorlabs/tap
+      brew install terma
       ```
 
       ```bash npm
@@ -30,59 +42,82 @@ This guide walks you through everything you need to go from a fresh signup to li
       ```
     </CodeGroup>
 
-    <Note>
-      Every installation method verifies the release checksum automatically before writing any files to your system.
-    </Note>
-
-    Confirm the install completed successfully:
+    Every method verifies the release checksum before installing. Check that `terma` is on your `PATH`:
 
     ```bash
     terma --version
     ```
   </Step>
 
-  <Step title="Set Up Your Machine">
-    Run `terma setup` to sign in and connect your coding agents. This is a one-time step per developer — it opens a browser-based PKCE sign-in flow, selects your project, binds your identity, and connects any detected agents (Claude Code, Codex, OpenCode).
-
-    ```bash
-    terma setup
-    ```
-
-    Terma walks you through each detected agent interactively. After setup completes, sessions from your coding tools will start flowing to Terma the next time you open an agent.
-  </Step>
-
-  <Step title="Wire Your Repository">
-    From the root of the repository you want to instrument, run `terma install`. Terma opens a pull request that adds git hooks, agent adapters, and a `.terma.toml` configuration file.
+  <Step title="Install Terma in your repository">
+    From inside the repository you work in:
 
     ```bash
     terma install
     ```
 
-    Once that PR is merged, every commit an agent session touches will carry a trailer that links the change back to the session — for example:
+    `install` walks you through everything:
 
-    ```text
-    feat(billing): prorate invoices on plan change
+    1. **Sign in.** Your browser opens on **Authorize the Terma CLI**. Choose your organization and select **Authorize**, then return to your terminal.
+    2. **Choose your agents** — Claude Code, Codex CLI, or Codex Desktop.
+    3. **Choose the project** you just created. If your organization has only one project, it is chosen for you.
+    4. **Confirm the hooks** it offers to write.
 
-    Credit the unused portion of the old plan when a customer switches mid-cycle.
+    It finishes with a checklist and numbered next steps. Follow them — usually, reload your shell so the agent shims are on your `PATH`, then commit the files it lists:
 
-    Agent-Session-Id: 018f3a2c-7d4e-7a1b-9c3d-2e5f6a7b8c9d
-    Agent-Tool: claude-code/2.1
+    ```bash
+    source ~/.zshrc    # or open a new terminal
+    git add .terma .claude/settings.json    # the files install lists, such as .codex/hooks.json for Codex
+    git commit -m "chore: install terma"
     ```
 
-    Run `terma install` once per repository. Every engineer who has run `terma setup` on their machine is automatically covered.
+    <Note>
+      Using Codex? Trust Terma's hooks once: run `/hooks` in Codex CLI, or open **Settings → Hooks → Review** in Codex Desktop. See [Codex](/integrations/codex#trust-the-hooks).
+    </Note>
   </Step>
 
-  <Step title="Verify Everything Works">
-    Run `terma doctor` to check the full chain end to end. Every check names what it verified, reports its status, and — on failure — tells you the exact command to fix it.
+  <Step title="Start a session">
+    Restart any agent that was already running, then start a new session in the repository and give it a task. Within a minute or two, the setup guide shows **First session received**.
+
+    Verify the whole chain from your terminal:
 
     ```bash
     terma doctor
     ```
 
-    Terma also predicts your attribution coverage based on what's connected, so you can see any gaps before they show up in your reports.
+    `doctor` checks every link — sign-in, binding, hooks, agent export, shell routing — makes a scratch commit in a temporary worktree to prove trailers are stamped, and confirms events reach Terma. Every failure names the command that fixes it.
+
+    Then read your first numbers:
+
+    ```bash
+    terma usage --since today
+    terma session list --since today
+    ```
+  </Step>
+
+  <Step title="Bring your team">
+    Push the files `terma install` wrote and merge them. After that, each teammate installs the CLI and runs `terma install` in the repository once. It sets up their own sign-in, keys, and agent routing without rewriting the committed files.
   </Step>
 </Steps>
 
-<Tip>
-  Run `terma usage --since today` to see token spend and cost as soon as your first session lands. No waiting — activity appears in real time.
-</Tip>
+When your agent makes a commit, the commit message carries the session that produced it:
+
+```text
+feat(billing): prorate invoices on plan change
+
+Credit the unused portion of the old plan when a customer switches mid-cycle.
+
+Agent-Session-Id: 018f3a2c-7d4e-7a1b-9c3d-2e5f6a7b8c9d
+Agent-Tool: claude-code/2.1
+```
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Project overview" icon="chart-line" href="/dashboard/overview">
+    Spend, burn rate, and breakdowns for your project.
+  </Card>
+  <Card title="Account setup" icon="users" href="/account-setup">
+    Invite your team, map identities, and organize projects.
+  </Card>
+</CardGroup>
