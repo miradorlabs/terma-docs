@@ -34,7 +34,7 @@ Every method installs the same release and verifies it against the release's `ch
 
 ### Install script options
 
-The install script is POSIX `sh`, so `| sh` works too. It picks the archive for your platform, verifies the checksum, and places the binary in `/usr/local/bin` or `~/.local/bin`.
+The install script is POSIX `sh`, so `| sh` works too. It picks the archive for your platform, verifies the checksum, and places the binary in `~/.local/bin`. It never asks for sudo. If `~/.local/bin` is not on your `PATH` yet, the script prints the line that adds it.
 
 | Variable | Effect |
 |---|---|
