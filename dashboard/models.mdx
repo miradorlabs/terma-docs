@@ -19,7 +19,7 @@ Search for a model, or sort by **Highest spend** (or **Most tokens**), **Most ca
 | **Sessions** | Sessions that used the model |
 | **People** | People who used it; select the count to see who |
 | **Tool calls** | Tool calls made in its turns |
-| **Spend share** / **Token share** | Its share of the project's total |
+| **Spend share** / **Token share** | Its share of the team's total |
 
 Tick the **Compare** checkbox on up to four models to compare them.
 
@@ -48,10 +48,3 @@ Select a model to open its page:
 - **Price history** — input, output, cache read, and cache write prices over time
 - **Current list prices** — per provider, per million tokens: input, output, cache read, cache write, and combined, with when each was observed
 
-## From the CLI
-
-```bash
-terma usage --group-by model --since 30d
-terma usage --group-by provider --since 7d
-terma session list --model claude-opus-4-1 --sort cost
-```

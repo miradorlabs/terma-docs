@@ -1,34 +1,20 @@
 ---
 title: "Connect OpenCode to Terma"
 sidebarTitle: "OpenCode"
-description: "Terma captures OpenCode sessions through a dependency-free plugin that turns OpenCode's events into OpenTelemetry and hands file edits to terma for commit attribution."
+description: "OpenCode support is coming soon: a dependency-free plugin that turns OpenCode's events into OpenTelemetry and hands file edits to terma for commit attribution."
 ---
 
 <Info>
-  **Coming soon in onboarding.** OpenCode appears as **Coming Soon** in the `terma setup` and `terma install` agent pickers. You can connect it today with the advanced `terma connect opencode` command described below.
+  **Coming soon.** OpenCode appears as **Coming Soon** in the `terma setup` agent picker, and you can't connect it yet. This page describes what Terma will capture once it is available. Today, `terma setup` connects [Claude Code](/integrations/claude-code) and [Codex](/integrations/codex).
 </Info>
 
-OpenCode reads its OpenTelemetry settings only from environment variables, so there is no configuration file Terma could point at its endpoint. Instead, Terma installs a plugin: a single dependency-free JavaScript file that OpenCode loads at startup. The plugin turns OpenCode's events — sessions, prompts, tool calls, and each assistant message with its model, provider, tokens, and cost — into OpenTelemetry and sends them to Terma.
-
-## Set up
-
-```bash
-terma connect opencode
-```
-
-On a terminal, `connect` shows a checklist of what to send. It writes the plugin to `~/.config/opencode/plugins/terma.js` (or under `$XDG_CONFIG_HOME/opencode`). Your `opencode.json` is never touched, and the project key never sits in the plugin — it fetches its authorization header from a Terma helper script.
-
-To remove it:
-
-```bash
-terma disconnect opencode
-```
+OpenCode reads its OpenTelemetry settings only from environment variables, so there is no configuration file Terma could point at its endpoint. Instead, Terma will install a plugin: a single dependency-free JavaScript file that OpenCode loads at startup. The plugin will turn OpenCode's events — sessions, prompts, tool calls, and each assistant message with its model, provider, tokens, and cost — into OpenTelemetry and send them to Terma.
 
 ## How it works
 
-- **Telemetry.** The plugin converts OpenCode's plugin events to OTLP and posts them to Terma, including tokens and cost for each assistant message.
-- **Attribution.** The plugin hands session start and end and every file edit to `terma hook`, so commits in an installed repository are stamped with OpenCode's sessions, the same way as other agents.
-- **Repository policy.** A repository can narrow what is sent with a committed `.opencode/terma.json`, which the plugin lays over its global settings. It says only which signals ship and whether prompt and tool content go with them — never where or with which key — so it is safe to commit. Write it with `terma connect opencode --scope local`.
+- **Telemetry.** The plugin converts OpenCode's plugin events to OpenTelemetry, including tokens and cost for each assistant message.
+- **Attribution.** The plugin hands session start and end and every file edit to terma's hooks, so commits in a collected repository are stamped with OpenCode's sessions, the same way as other agents.
+- **Policy.** As with every agent, your team's collection policy decides which repositories are collected and whether prompts and tool content leave your machine.
 
 ## What's captured
 
@@ -36,15 +22,7 @@ terma disconnect opencode
 |---|---|
 | Sessions and turns | Yes |
 | Model calls, provider, tokens, and cost | Yes |
-| Tool calls, with arguments and output | Unless `--exclude-tool-content` |
-| Prompts and responses | Unless `--exclude-prompts` |
+| Tool calls, with arguments and output | When your team's policy collects tool content |
+| Prompts and responses | When your team's policy collects prompts |
 | Files edited, for commit attribution | Yes |
 
-## Verify
-
-```bash
-terma harness status opencode   # what OpenCode is configured to send
-terma doctor                     # proves hooks stamp a commit and events reach Terma
-```
-
-`terma update` refreshes the plugin to the new version's template automatically.

@@ -1,115 +1,82 @@
 ---
 title: "Connect Codex to Terma"
 sidebarTitle: "Codex"
-description: "Terma captures Codex CLI through its native OpenTelemetry export routed per repository, and Codex Desktop through trusted repository hooks. Both attribute commits."
+description: "Terma captures Codex, the TUI and the desktop app, through Codex's native OpenTelemetry export and machine-wide hooks that attribute commits."
 ---
 
-Terma supports both ways of running OpenAI's Codex, and treats them as separate choices:
+Terma supports OpenAI's Codex as one choice, **Codex TUI & Desktop**. The `codex` shell command, the desktop app, and the IDE extension share Codex's user-level configuration, hooks, and trust settings in `~/.codex`, so one setup covers all of them.
 
-- **Codex CLI** — the `codex` shell command. Usage and cost arrive through Codex's own OpenTelemetry export, routed to the repository's project each time you launch `codex`.
-- **Codex Desktop** — the desktop app, which does not launch through your shell. It reports through repository hooks and Terma's local spool.
+## Set up
 
-Both use the repository's `.codex/hooks.json` to attribute commits.
-
-## Codex CLI
-
-### Set up
+Run `terma setup` once on your machine and choose **Codex TUI & Desktop** when asked:
 
 ```bash
-cd your-repo
-terma install --harness codex
+terma setup --harness codex
 ```
 
-Reload your shell as `install` tells you (for zsh, `source ~/.zshrc`), commit the files it lists, then trust the hooks in Codex (see [Trust the hooks](#trust-the-hooks)).
+Then restart Codex — including the desktop app and any background Codex process — so it loads the new configuration. See [`terma setup`](/cli/setup) for every option.
 
-### How it works
+Setup approves terma's own Codex hooks for you, so there is no separate review step in Codex. If you change terma's hook entries by hand, Codex asks you to trust them again; run `terma setup` to restore them.
 
-Codex ignores telemetry settings in a repository's own configuration, so a direct Codex export is always machine-wide. `terma install` works around this: it puts a small `codex` shim first on your `PATH`, and each time you run `codex` in the repository, the shim passes the repository's telemetry settings as launch-time `-c` overrides. Your own Codex home directory, login, history, trust settings, and notifier are left as they are.
+Sessions are collected only where your team's collection policy allows: in a repository the policy lists, or everywhere if the policy collects every session. An org admin sets this on **Team settings → Data collection**.
 
-This channel carries model calls with their token counts and cost, tool calls, and — unless you turn them off — prompts and responses.
+## How it works
 
-<Warning>
-  The launch-time overrides include the project's telemetry key, which local process inspection can see. Do not log the arguments that agent launchers generate.
-</Warning>
+Terma configures Codex at the user level. Nothing is written into your repositories.
 
-Codex sessions carry your identity as `enduser.id`, taken from your `git user.email` by default. Change it with `terma install --identity <value>`, or pass `--identity none` to omit it.
+### Telemetry: Codex's OpenTelemetry export
 
-## Codex Desktop
+`terma setup` points the `[otel]` exporter in `~/.codex/config.toml` at a relay terma runs on your machine, on `127.0.0.1`. The relay forwards only sessions that a hook claimed in a repository your team collects, with your team's key, and drops everything else on your machine. Your team's key never appears in Codex's configuration.
 
-### Set up
+This channel carries model calls with their token counts and cost, tool calls, and — when your team's policy collects them — prompts, responses, and tool content. Setup also routes Codex's `notify` setting through terma to capture turns, and keeps any notifier you already had.
 
-1. Choose **Codex Desktop** in `terma setup`, or run `terma install --harness codex-desktop` in a repository. Choose **Codex CLI** too if you also use the shell command.
-2. Run `terma install` in each repository you want to report. It binds the project, stores a project key and content policy on your machine, and writes the Codex hooks for you to commit.
-3. Approve the hooks in Codex Desktop:
-   1. Open the repository in Codex Desktop and trust the project if prompted.
-   2. Open **Settings → Hooks** and select **Review** for the entries from this repository's `.codex/hooks.json`. If hooks are disabled, enable them there.
-   3. Inspect the `terma hook …` commands and approve each Terma entry. Codex skips any entry you leave untrusted.
-4. Run `terma desktop status` in the repository. **Codex hooks: ready** confirms the current definitions are trusted.
-5. Start a new **Local** task in that repository, send a test message, and run `terma doctor` to verify delivery.
+Terma also reads Codex's local session log for activity Codex's telemetry does not report, such as hosted actions and compactions.
 
-Terma installs no background receiver, launch agent, or global Codex exporter for Desktop.
+### Attribution: machine-wide hooks
 
-### What Desktop capture includes
-
-- Sessions and turns, with prompt text only if the repository allows prompts
-- Local tool calls and their results, with arguments and output only if the repository allows tool content
-- Per-response token usage, turn duration, and time to first token, read from Codex's local session log
-- Approval requests, labeled **requested** — Codex does not tell hooks whether you approved or denied
-- Files edited, for commit attribution
-
-<Note>
-  Desktop capture reads Codex's private local session format, which can change between Codex releases, and Codex exempts some hosted and specialized tools from hooks. Terma cannot guarantee every Desktop tool call is captured, and new Codex item types may require a Terma update.
-</Note>
-
-## Trust the hooks
-
-Codex runs repository hooks only after you trust them, and asks again whenever a hook definition changes — for example after `terma update --refresh`. `terma install` never approves hooks on your behalf.
-
-- **Codex CLI:** run `/hooks` inside Codex and approve the Terma entries.
-- **Codex Desktop:** open **Settings → Hooks → Review** and approve the Terma entries.
-
-`terma doctor` reports untrusted hooks under **agent hooks run**.
-
-## Repository hooks
-
-`install` adds these entries to `.codex/hooks.json`:
+`terma setup` adds these entries to `~/.codex/hooks.json`:
 
 | Hook | What Terma records |
 |---|---|
 | `SessionStart` | The session begins |
-| `UserPromptSubmit` | A turn begins, with prompt text if allowed |
-| `PreToolUse`, `PostToolUse` | Tool calls, their observed duration, and the files each edit touches |
-| `PermissionRequest` | Codex asked for approval |
+| `UserPromptSubmit` | A turn begins |
+| `PermissionRequest` | Codex asked for approval, labeled **requested** — Codex does not tell hooks whether you approved or denied |
+| `PostToolUse` | Tool calls and the files each edit touches |
 | `Stop`, `SessionEnd` | A turn or the session ended, with token usage and plan usage windows |
 | `SubagentStart`, `SubagentStop` | Subagents the session spawns |
 
-Each command is guarded, so on a machine without Terma it does nothing.
+Each command is guarded, so on a machine without terma it does nothing. Hooks never make a network request: they append to a local queue that terma delivers in the background. Set `TERMA_HOOKS=0` to turn them off for one shell or process.
+
+When your team's policy stamps commits, the first session in a collected repository also installs commit hooks in that repository's `.git/hooks`. See [Commit attribution](/concepts/attribution).
 
 ## What's captured
 
-| Signal | Codex CLI | Codex Desktop |
-|---|---|---|
-| Sessions, turns, and subagents | Yes | Yes |
-| Model calls, tokens, and cost | Yes (OpenTelemetry) | Tokens per response (session log) |
-| Tool calls | Yes | Local tools; some hosted tools are exempt |
-| Prompts and responses | Unless `--prompts off` | If the repository allows prompts |
-| Files edited, for commit attribution | Yes | Yes |
-| Plan usage windows and credits | Yes | Yes |
+| Signal | Source |
+|---|---|
+| Sessions, turns, and subagents | Hooks and OpenTelemetry |
+| Model calls, tokens, and cost | OpenTelemetry |
+| Tool calls | OpenTelemetry and hooks |
+| Prompts and responses | When your team's policy collects prompts |
+| Tool input and output | When your team's policy collects tool content |
+| Files edited, for commit attribution | Hooks |
+| Plan usage windows and credits | Hooks |
 
 <Note>
-  `--exclude-tool-content` stops Codex from exporting tool output, but Codex cannot suppress native tool arguments.
+  Some of this capture reads Codex's private local session format, which can change between Codex releases, and Codex exempts some hosted and specialized tools from hooks. New Codex item types may require a terma update; run `terma update`.
 </Note>
+
+## Controlling what is sent
+
+Your team's collection policy decides what leaves your machine. An org admin sets it on **Team settings → Data collection**. The local relay removes what the policy does not collect before anything leaves. See [Privacy and data](/concepts/privacy).
 
 ## Verify
 
 ```bash
-terma status            # the Agent line should show Codex exporting to this project
-terma desktop status    # Codex Desktop: are this repository's hooks trusted?
-terma doctor            # proves hooks stamp a commit and events reach Terma
+terma doctor
 ```
 
-`terma desktop status` also reports a separate, user-level Codex exporter if one is active, since that can send Desktop activity from other repositories. Use `terma disconnect codex` to remove a Terma-owned one.
+`doctor` checks your sign-in, whether your team collects the current repository, the hooks and whether Codex trusts them, Codex's export, and delivery to Terma. It also warns when a Codex process started before setup is still exporting where it did; restart it. Every failure names its fix, usually `terma setup`.
 
 <Tip>
-  For Codex-managed local worktrees, a Git-ignored `.terma/settings.json` must be copied into the worktree. Add it to `.worktreeinclude` if needed.
+  An organization that deploys Codex configuration centrally can write terma's hooks as a `requirements.toml`, which Codex runs with no trust step: `terma setup --managed-config <dir>`.
 </Tip>

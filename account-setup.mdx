@@ -1,69 +1,62 @@
 ---
-title: "Set up your organization, projects, and team"
+title: "Set up your organization, teams, and people"
 sidebarTitle: "Account setup"
-description: "Structure your Terma organization into projects, invite teammates and manage roles, onboard every engineer's machine, and map identities to people."
+description: "Structure your Terma organization into teams, invite colleagues and manage roles, choose what each team collects, onboard every engineer's machine, and map identities to people."
 ---
 
-Account setup covers everything between signing up and having your whole team tracked: your organization, its projects, its members, each engineer's machine, and how Terma ties identities to people.
+Account setup covers everything between signing up and having everyone tracked: your organization, its teams, its members, each engineer's machine, and how Terma ties identities to people.
 
 ## Your organization
 
-When you first sign up, Terma creates an organization for you and asks you to **Name your organization**. Everything else lives inside it: projects, members, the GitHub connection, and principal mapping.
+When you first sign up, Terma creates an organization for you and asks you to **Name your organization**. Everything else lives inside it: teams, members, the GitHub connection, and principal mapping.
 
-You can belong to several organizations. Switch between them with the organization switcher in the top bar, or create another with **New organization**. From the CLI, `terma org list` and `terma org use` do the same.
+You can belong to several organizations. Switch between them with the organization switcher in the top bar, or create another with **New organization**. On the command line, `terma setup --org <name>` switches the organization your machine reports to.
 
-## Projects
+## Teams
 
-A project is where activity lands. Every session, usage figure, and attributed commit belongs to one project. Use separate projects to separate products, teams, or anything you want to report on separately.
+A team is where activity lands. Every session, usage figure, and attributed commit belongs to one team. Use separate teams to separate products, groups of people, or anything you want to report on separately.
 
-- **Create a project** from your organization's home page with **New project**. Terma opens a setup guide for connecting your first tools.
-- **Bind a repository** to a project by running `terma install` in it. The binding is saved in the committed `.terma/settings.json`, so everyone who works in the repository reports to the same project.
-- **Change a repository's project** by running `terma install` again and choosing another, then committing the change.
-- **Delete a project** from its **Settings** page. Only organization admins can delete projects.
+- **Create a team** from your organization's home page with **New team**. Terma opens a setup guide for connecting your first tools.
+- **Choose what the team collects** on **Team settings → Data collection**. An organization admin sets the team's policy: every session, or only the repositories it lists, and whether commits are stamped and prompts and tool content are sent. See [Settings](/dashboard/settings#data-collection).
+- **Delete a team** from its **Team settings** page. Only organization admins can delete teams.
 
-There is no "current project" in the CLI: commands use the project the current repository is bound to, or `--project` for a one-off. See [Projects and repository bindings](/cli/project).
+Each engineer chooses their team when they run `terma setup`, and every session they run reports to that team. If your organization has only one team, it is chosen for them. To switch, run `terma setup --team <name>`.
 
 ## Members and roles
 
-Invite teammates from **Settings → Organization** (or during onboarding). Enter their email addresses and select **Send invite**. Invited people join as members and don't need a beta invite code.
+Invite colleagues from **Settings → Organization** (or during onboarding). Enter their email addresses and select **Send invite**. Invited people join as members and don't need a beta invite code.
 
 | Role | Can |
 |---|---|
-| **Admin** | Rename the organization, invite and remove members, change roles, manage the GitHub connection and principal mapping, and delete projects |
-| **Member** | Create and use projects; organization settings and principal mapping are read-only |
+| **Admin** | Rename the organization, invite and remove members, change roles, manage the GitHub connection, principal mapping, and team collection policies, and delete teams |
+| **Member** | Create and use teams; organization settings, collection policies, and principal mapping are read-only |
 
 Pending invitations can be resent or revoked. To delete an organization, select **Request deletion** in its settings; deletion is handled by Terma support.
 
 ## Onboarding each engineer
 
-Once the files `terma install` wrote are merged, each engineer does two things on their own machine:
+Nothing is committed to your repositories, so each engineer sets up their own machine once:
 
 ```bash
-# 1. Install the CLI (or use Homebrew or npm)
+# 1. Install the CLI (or use npm or Homebrew)
 curl -fsSL https://terma.ai/install.sh | bash
 
-# 2. In the repository
-terma install
+# 2. Once, from any directory
+terma setup
 ```
 
-`terma install` signs them in, asks which agents they use, and sets up their own keys and agent routing, without rewriting the committed files. Optionally, `terma setup` signs them in and records their agents once, so `install` never has to ask.
+`terma setup` signs them in, asks which agents they use and which team they're on, and configures their agents machine-wide. They restart any running agents, then run `terma doctor` to check everything works. See [Installation](/cli/installation) and [`terma setup`](/cli/setup).
 
 <Warning>
-  An engineer who has the committed hooks but has not run `terma install` gets no telemetry, and their hook events are held locally until a key exists. `terma status` and `terma doctor` say so.
+  Sessions are collected only where the team's policy allows. If the policy lists repositories, make sure each repository engineers work in is on the list. `terma doctor` shows the `origin` terma sees and whether the team collects it.
 </Warning>
 
 ## Identities and principal mapping
 
 Sources report identities, not people. The same engineer may be `ada@example.com` to Claude Code, a different user id to Codex, and an API key to OpenRouter. Each identity is a **principal**.
 
-Organization admins map principals to members on **Settings → Principals**: seat each identity to the member it belongs to, or give it an alias. Identities seated to one person roll up as that person across every metric, in every project. The Overview shows a banner when a project has unmapped principals.
+Organization admins map principals to members on **Team settings → Principals**: seat each identity to the member it belongs to, or give it an alias. Identities seated to one person roll up as that person across every metric, in every team. The Overview shows a banner when a team has unmapped principals.
 
-From the CLI, `terma usage --user ada` already matches every principal that shares Ada's name or email. Use `terma principal find` to see what a name resolves to.
+## Keys
 
-<Note>
-  Traffic attributed to an API key rather than a person shows as `(no user id)` in `terma usage`. Run `terma usage --group-by api-key` to see which key, then seat the key to its owner in principal mapping.
-</Note>
-
-## Keys and sign-ins
-
-**Settings → Connections** lists the project's **server keys** — what agents and tools export telemetry with — and your active **CLI logins**. Revoke a server key there when a machine or tool no longer needs it. See [Settings](/dashboard/settings#connections).
+Claude Code and Codex need no keys: `terma setup` handles sign-in and routing. For other tools, such as OpenRouter, **Team settings → Team API keys** lists the team's keys. Revoke one there when a tool no longer needs it. See [Settings](/dashboard/settings#team-api-keys).

@@ -4,24 +4,20 @@ sidebarTitle: "Sessions"
 description: "A Terma session is one conversation with a coding agent, rolled up with its turns, model calls, tool calls, token usage, cost, and git activity."
 ---
 
-A session is one conversation with a coding agent — Claude Code, Codex, OpenCode, Cursor, Antigravity, or requests grouped from a router such as OpenRouter. Terma rolls each session up with everything it did: turns, model calls, tool calls, token usage, cost, subagents, and the git activity it produced. Sessions are the unit attribution, usage, and the dashboard are built on.
+A session is one conversation with a coding agent — such as Claude Code or Codex — or requests grouped from a router such as OpenRouter. Terma rolls each session up with everything it did: turns, model calls, tool calls, token usage, cost, subagents, and the git activity it produced. Sessions are the unit attribution, usage, and the dashboard are built on.
 
 ## How a session is identified
 
 A session is identified by its **session id together with its source system** (`claude-code`, `codex`, `opencode`, and so on). The session id is the agent's own id for the conversation, and it is the same value that appears in the `Agent-Session-Id` trailer on commits the session contributed to.
 
-Because ids are only unique within a source, CLI commands that act on one session take both:
-
-```bash
-terma session get <session-id> --source claude-code
-```
+Because ids are only unique within a source, Terma always keys a session by both.
 
 ## How sessions are captured
 
 Two channels feed a session, and Terma joins them on the session id:
 
-- **The agent's own telemetry export** carries model calls with their token counts and cost, tool calls, and — under the switches you chose — prompts, responses, and tool content.
-- **Terma's hooks** record when a session starts and ends, which files it edits, the subagents it spawns, and your plan's usage windows. Hooks append to a local spool and never wait for the network.
+- **The agent's own telemetry export** carries model calls with their token counts and cost, tool calls, and — when your team's policy collects them — prompts, responses, and tool content.
+- **Terma's hooks** record when a session starts and ends, which files it edits, the subagents it spawns, and your plan's usage windows. Hooks append to a local queue and never wait for the network.
 
 How much of each channel exists depends on the agent. See [Integrations](/integrations/claude-code) for what each one reports.
 
@@ -43,7 +39,7 @@ How much of each channel exists depends on the agent. See [Integrations](/integr
 
 ## Events
 
-Inside a session, Terma keeps an ordered event history you can replay in the dashboard or with `terma session events`:
+Inside a session, Terma keeps an ordered event history you can replay in the dashboard:
 
 | Kind | Meaning |
 |---|---|
@@ -57,26 +53,16 @@ Inside a session, Terma keeps an ordered event history you can replay in the das
 | `compaction` | The agent summarized earlier context to make room |
 | `error` | An error during the session |
 
-Content appears only when the agent was configured to export it.
+Content appears only when your team's policy collects it.
 
 ## Session totals versus usage over time
 
-A session's totals cover its whole life. `terma usage` and the dashboard's usage charts instead sum spend that settled inside a time window. A session that started yesterday and ran past midnight counts toward today's usage only for the part that happened today, so the two views legitimately differ whenever a session straddles the window's edge.
+A session's totals cover its whole life. The dashboard's usage charts instead sum spend that settled inside a time window. A session that started yesterday and ran past midnight counts toward today's usage only for the part that happened today, so the two views legitimately differ whenever a session straddles the window's edge.
 
 ## Reading sessions
 
-```bash
-terma session list --user ada --since 7d          # recent sessions for one person
-terma session get <session-id> --source claude-code
-terma session events <session-id> --source claude-code --tools-only
-terma session git <session-id> --source claude-code
-```
+Sessions are in the dashboard: the **Sessions** page lists them, and each one opens to a full replay.
 
-<CardGroup cols={2}>
-  <Card title="terma session" icon="terminal" href="/cli/sessions">
-    List, inspect, and replay sessions from the terminal.
-  </Card>
-  <Card title="Sessions in the dashboard" icon="play" href="/dashboard/session-replay">
-    Browse sessions and replay their timelines in the web app.
-  </Card>
-</CardGroup>
+<Card title="Sessions in the dashboard" icon="play" href="/dashboard/session-replay">
+  Browse sessions and replay their timelines in the web app.
+</Card>

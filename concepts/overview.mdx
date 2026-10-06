@@ -1,25 +1,25 @@
 ---
 title: "How Terma works"
 sidebarTitle: "Overview"
-description: "Terma's model: organizations and projects, sources and sessions, principals, commit attribution, and funding-aware cost."
+description: "Terma's model: organizations and teams, sources and sessions, principals, commit attribution, and funding-aware cost."
 ---
 
 Terma connects three things that usually live apart: what your coding agents did, what it cost, and the code it produced. This page introduces the pieces and how they fit together.
 
-## Organizations and projects
+## Organizations and teams
 
-An **organization** is your team's workspace. Members, invitations, roles, the GitHub connection, and principal mapping belong to the organization.
+An **organization** is your company's workspace. Members, invitations, roles, the GitHub connection, and principal mapping belong to the organization.
 
-A **project** is where activity lands. Each repository is bound to one project by `terma install`, and every session, usage figure, and attributed commit from that repository reports there. Use separate projects for separate products or teams.
+A **team** is where activity lands. Every session, usage figure, and attributed commit belongs to one team. Use separate teams for separate products or groups of people.
 
-Your CLI sign-in is scoped to an organization, not a project, so you can work across repositories that report to different projects without signing in again.
+Each developer chooses their team once, with `terma setup`, and every session they run reports to it. The team's **collection policy**, set by an organization admin, decides which repositories are collected — every session, or only the repositories it lists — and what content leaves each machine. Nothing is written into your repositories.
 
 ## Sources
 
-A **source** is anything that sends telemetry to a project:
+A **source** is anything that sends telemetry to a team:
 
-- **Coding agents** — Claude Code, Codex CLI, and Codex Desktop, set up per repository by `terma install`. Cursor, OpenCode, and Antigravity have partial or advanced support.
-- **Routers and other tools** — OpenRouter, or any tool that exports OpenTelemetry, sending with a project [server key](/dashboard/settings#server-keys).
+- **Coding agents** — Claude Code and Codex, each covering its CLI and desktop app, set up once per machine by `terma setup`. Cursor, OpenCode, and Antigravity are coming soon.
+- **Routers and other tools** — OpenRouter, or any tool that exports OpenTelemetry, sending with a [team API key](/dashboard/settings#team-api-keys).
 
 ## Sessions
 
@@ -39,7 +39,7 @@ Sources report identities, not people: an email seen by Claude Code, a user id s
 
 ## Attribution
 
-Terma's `prepare-commit-msg` hook stamps each commit with `Agent-Session-Id` and `Agent-Tool` trailers for every session that edited a staged file. Pure human work gets no trailer. The link lives in your Git history, and with the GitHub connection, Terma lines up pull requests with the sessions behind them.
+When your team's policy turns on commit stamping, Terma's `prepare-commit-msg` hook stamps each commit with `Agent-Session-Id` and `Agent-Tool` trailers for every session that edited a staged file. Pure human work gets no trailer. The link lives in your Git history, and with the GitHub connection, Terma lines up pull requests with the sessions behind them.
 
 <Card title="Attribution" icon="code-branch" href="/concepts/attribution">
   How commit trailers link sessions to the code they produced.
@@ -57,15 +57,15 @@ The same tokens cost different amounts depending on whether a subscription, prep
 
 <Steps>
   <Step title="Agents export, hooks record">
-    Each agent sends usage through its own telemetry export, routed to the repository's project. Terma's hooks record session boundaries, edited files, subagents, and plan usage, and append them to a local spool without touching the network.
+    Each agent sends usage through its own telemetry export to a relay on your machine, which forwards only sessions your team collects. Terma's hooks record session boundaries, edited files, subagents, and plan usage, and append them to a local queue without touching the network.
   </Step>
   <Step title="Commits are stamped locally">
-    When you commit, the hook matches staged files to sessions and adds trailers in under 50 ms. Every commit is recorded for delivery.
+    When you commit, the hook matches staged files to sessions and adds trailers in under 50 ms. Every commit in a collected repository is recorded for delivery.
   </Step>
   <Step title="Events are delivered in the background">
-    The spool is delivered after commits and session ends, with retry and backoff. Nothing is lost if the network is down.
+    The queue is delivered after commits and session ends, with retry and backoff. Nothing is lost if the network is down.
   </Step>
   <Step title="You read it back">
-    The dashboard shows sessions, people, models, pull requests, and where agent work lands in your codebase. `terma usage` and `terma session` answer the same questions from a terminal.
+    The dashboard shows sessions, people, models, pull requests, and where agent work lands in your codebase.
   </Step>
 </Steps>

@@ -20,7 +20,7 @@ Capturing sessions tells you what agents cost. Attribution tells you what that s
   </Step>
 </Steps>
 
-A commit with only your own edits gets no trailer. Merge and squash commit messages are never modified.
+A commit with only your own edits gets no trailer. Merges, squashes, and the commits a rebase or cherry-pick replays are never stamped.
 
 ## Commit message format
 
@@ -33,7 +33,7 @@ Agent-Session-Id: 018f3a2c-7d4e-7a1b-9c3d-2e5f6a7b8c9d
 Agent-Tool: claude-code/2.1
 ```
 
-`Agent-Session-Id` is the agent's own session id — the same id you see in `terma session list` and in the dashboard. `Agent-Tool` names the agent, followed by its version when the agent reports one. The trailers follow the standard Git trailer format, so `git log --format='%(trailers)'` and the GitHub API can read them without Terma.
+`Agent-Session-Id` is the agent's own session id — the same id you see in the dashboard. `Agent-Tool` names the agent, followed by its version when the agent reports one. The trailers follow the standard Git trailer format, so `git log --format='%(trailers)'` and the GitHub API can read them without Terma.
 
 ## Several sessions in one commit
 
@@ -50,27 +50,32 @@ Agent-Tool: codex
 
 Edits made by a subagent are attributed to the session that spawned it, so a commit of a subagent's work carries the parent session's trailer.
 
-## When an agent cannot report files
-
-If an agent's hooks cannot report which files it edited, a session that was recently active in the repository can still claim the commit, within a four-hour window. Agents that report files precisely are always matched by file.
-
 ## Every commit is counted
 
-`post-commit` records an event for every commit, stamped or not, so Terma can compare agent-assisted work with the rest. For a commit without a session, the event carries only its identity and size — SHA, remote URL with credentials removed, branch, author, file count, and line totals — never file names. See [Privacy and security](/concepts/privacy#what-every-commit-sends).
+`post-commit` records an event for every commit in the repository, stamped or not, so Terma can compare agent-assisted work with the rest. For a commit without a session, the event carries only its identity and size — SHA, remote URL, branch, file count, and line totals — never file names. See [Privacy and security](/concepts/privacy#what-every-commit-sends).
 
 ## Fast, local, and safe
 
-- `prepare-commit-msg` reads local manifests only and makes no network call. It finishes in under 50 ms, a budget enforced in CI.
-- Events are appended to a local spool and delivered in the background after the commit, with retry and backoff.
-- Every hook ends in `|| true`: a missing or broken `terma` never fails a commit.
+- `prepare-commit-msg` reads local manifests only and makes no network call. It finishes in under 50 ms.
+- Events are appended to a local queue and delivered in the background after the commit, with retry and backoff.
+- Every hook is guarded: a missing or broken `terma` never fails a commit.
+- `TERMA_HOOKS=0` turns terma's hooks off for one shell or process.
 
 ## Setting it up
 
-`terma install` writes the commit hooks — through husky, lefthook, or pre-commit if the repository uses one — along with the agents' hooks, into files you commit. Once they are merged, everyone who works in the repository with Terma installed gets their commits attributed.
+Commit stamping is your team's choice. An organization admin turns on **Stamp commits with the agent session** on **Team settings → Data collection**. Each developer runs `terma setup` once; there is nothing to commit.
+
+With stamping on, the first agent session in a repository your team collects installs `prepare-commit-msg` and `post-commit` into that repository's own `.git/hooks` (the shared one, so linked worktrees use them too). git neither tracks nor commits these files. A repository no agent has worked in, and a folder outside git, get nothing.
+
+terma chains to hooks already there: an existing hook is renamed `<name>.pre-terma` and still runs first, unchanged. It keeps its veto — if it exits non-zero, the commit stops.
+
+- **pre-commit** and **lefthook** work normally, because terma doesn't set `core.hooksPath`.
+- **husky v9** sets the repository's own `core.hooksPath`, so git never reads `.git/hooks`. terma skips such a repository, and `terma doctor` reports that its commits are not stamped.
+
+terma never removes these hooks. Turning stamping off only stops terma adding them anywhere new, and `terma teardown` leaves them too — with terma gone, they only run the hook each one displaced.
 
 ```bash
-terma install    # in the repository
-terma doctor     # makes a real scratch commit and checks it is stamped
+terma doctor     # in the repository: reports whether its commits are stamped
 ```
 
 <Note>
@@ -79,5 +84,4 @@ terma doctor     # makes a real scratch commit and checks it is stamped
 
 ## Where attribution shows up
 
-- **`terma session git`** lists the branches, commits, pushes, and pull requests a session's tool calls produced.
 - **The dashboard** shows each session's git activity, the pull requests agents contributed to, and a burn map of where agent work lands in your codebase. See [Pull requests](/dashboard/pull-requests) and [Burn map](/dashboard/burn-map).

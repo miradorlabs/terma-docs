@@ -10,28 +10,28 @@ No agent, SDK change, or proxy is required. The connection is configured once in
 
 ## How it works
 
-1. You create a **server key** for a Terma project. This key can send telemetry to that project and nothing else.
-2. In OpenRouter, you add Terma as an **OpenTelemetry Collector** destination under Broadcast, using Terma's OTLP endpoint and the server key as a bearer token.
+1. You create a **team API key** for a Terma team. This key can send telemetry to that team and nothing else.
+2. In OpenRouter, you add Terma as an **OpenTelemetry Collector** destination under Broadcast, using Terma's OTLP endpoint and the team API key as a bearer token.
 3. After every request, OpenRouter asynchronously posts an OTLP trace to Terma. Terma recognises the OpenRouter format, records a model call with tokens and cost, and groups calls into sessions.
 
 Traces are sent after the request completes, so enabling Broadcast does not add latency to your OpenRouter calls.
 
 ## Before you start
 
-- A Terma project. Every server key is scoped to one project, and OpenRouter traffic lands in that project.
+- A Terma team. Every team API key is scoped to one team, and OpenRouter traffic lands in that team.
 - Access to the OpenRouter account or organization whose traffic you want to track. Editing an organization's Broadcast settings requires an OpenRouter **organization admin**.
 
 ## Setup
 
 <Steps>
   <Step title="Get connection details from Terma">
-    You need two values from Terma: the project's **OTLP endpoint** (for example `https://otel.terma.ai`) and a **server key**.
+    You need two values from Terma: the **OTLP endpoint** (for example `https://otel.terma.ai`) and a **team API key**.
 
-    - **Setting up a new project?** In the project setup guide, choose **Other**, then the **OpenRouter** format. Terma shows the endpoint and headers to paste, filled in with the project's auto-created **Ingestion key**.
-    - **Existing project?** Open **Settings → Connections** and, under **Server keys**, create a key with a recognizable name such as `OpenRouter`. The page shows the OTLP endpoint above the keys.
+    - **Setting up a new team?** In the team's setup guide, choose **Other**, then the **OpenRouter** format. Terma shows the endpoint and headers to paste, filled in with the team's auto-created **Ingestion key**.
+    - **Existing team?** Open **Team settings** and, under **Team API keys**, create a key with a recognizable name such as `OpenRouter`. The panel shows the OTLP endpoint above the keys.
 
     <Warning>
-      A new key is shown in full only once. Copy it before leaving the page. You can revoke it later from **Settings → Connections**, but you cannot view it again.
+      A new key is shown in full only once. Copy it before leaving the page. You can revoke it later from **Team settings → Team API keys**, but you cannot view it again.
     </Warning>
   </Step>
   <Step title="Enable Broadcast in OpenRouter">
@@ -48,11 +48,11 @@ Traces are sent after the request completes, so enabling Broadcast does not add 
     https://otel.terma.ai/v1/traces
     ```
 
-    **Headers (optional)** — a JSON object carrying your Terma server key:
+    **Headers (optional)** — a JSON object carrying your Terma team API key:
 
     ```json
     {
-      "Authorization": "Bearer <your-terma-server-key>"
+      "Authorization": "Bearer <your-terma-team-api-key>"
     }
     ```
 
@@ -68,13 +68,6 @@ Traces are sent after the request completes, so enabling Broadcast does not add 
     - **Overview** lists `openrouter` under **Spend by source**
     - **Sessions** shows the request as a session, with the model and provider that served it
 
-    From the terminal, the same data is available with:
-
-    ```bash
-    terma usage --since 1h --group-by source
-    ```
-
-    An `openrouter` row confirms traces are arriving.
   </Step>
 </Steps>
 
@@ -99,7 +92,7 @@ OpenRouter identifies each call by the **API key** that made it, and Terma uses 
 To get useful attribution:
 
 - **Use one OpenRouter key per person or per service**, named after them. A single shared key makes every call look like the same actor.
-- **Map keys to people** in the Terma dashboard under **Settings → Principals**. An organization admin can seat an OpenRouter key to the person who owns it, or give it an alias, so their OpenRouter usage sits alongside their Claude Code or Codex activity.
+- **Map keys to people** in the Terma dashboard under **Team settings → Principals**. An organization admin can seat an OpenRouter key to the person who owns it, or give it an alias, so their OpenRouter usage sits alongside their Claude Code or Codex activity.
 
 To group related requests into one Terma session, pass a `session_id` in the request body (or an `x-session-id` header). Every call sharing that value lands in the same session:
 
@@ -114,7 +107,7 @@ To group related requests into one Terma session, pass a `session_id` in the req
 Without a `session_id`, each request is its own session.
 
 <Note>
-  In `terma usage`, OpenRouter traffic that is not mapped to a person shows as `(no user id)`. Run `terma usage --group-by api-key` to see which key it came from, then map that key under **Settings → Principals**.
+  OpenRouter traffic from a key that is not mapped to a person appears under that key's name. Map the key to its owner under **Team settings → Principals**.
 </Note>
 
 ## Privacy Mode
@@ -123,11 +116,11 @@ OpenRouter's Broadcast settings include a **Privacy Mode** that strips prompts a
 
 ## Multiple OpenRouter accounts or organizations
 
-Broadcast settings live on the OpenRouter account or organization, and each Terma server key belongs to one project. To send traffic from several OpenRouter organizations to Terma, configure Broadcast in each one. Point them at the same server key to land everything in one project, or create a key per project to keep them separate.
+Broadcast settings live on the OpenRouter account or organization, and each Terma team API key belongs to one team. To send traffic from several OpenRouter organizations to Terma, configure Broadcast in each one. Point them at the same team API key to land everything in one team, or create a key per team to keep them separate.
 
 ## Troubleshooting
 
-- **Test Connection fails.** Check that the endpoint ends in `/v1/traces` and that the header value starts with `Bearer ` followed by the full key. A revoked key is rejected the same way; create a new one under **Settings → Connections**.
+- **Test Connection fails.** Check that the endpoint ends in `/v1/traces` and that the header value starts with `Bearer ` followed by the full key. A revoked key is rejected the same way; create a new one under **Team settings → Team API keys**.
 - **The test passes but no sessions appear.** Confirm the requests are being made with a key covered by the Broadcast settings you edited, and that the destination's sampling rate is `1.0`. Traces arrive asynchronously, so allow a minute after the request.
-- **Everything shows as one person.** The calls share an OpenRouter API key. Create per-person keys, or map the shared key under **Settings → Principals**.
+- **Everything shows as one person.** The calls share an OpenRouter API key. Create per-person keys, or map the shared key under **Team settings → Principals**.
 - **Spend looks like an estimate.** It is not. Costs for OpenRouter calls are the amounts OpenRouter reported for each request. Costs marked **Estimated** only appear for sources that do not report cost themselves.

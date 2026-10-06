@@ -33,14 +33,14 @@ The difference between Notional and Net is how much your subscriptions absorbed.
 
 ## Where funding evidence comes from
 
-Terma learns how usage is funded from the agents themselves, when Terma is installed with the CLI:
+Terma learns how usage is funded from the agents themselves, once a developer has run `terma setup`:
 
 - **Claude Code** — the signed-in account and plan, read at session start, and the plan's allowance windows, read through Claude Code's status line. See [Claude Code](/integrations/claude-code#plan-usage-the-status-line).
 - **Codex** — the plan, its primary and secondary allowance windows, and credit balances, read by Terma's Codex hooks.
 
 When the effective credential is an API key rather than the subscription login, Terma does not attribute the usage to the subscription.
 
-If people run an agent without the Terma CLI, their allowance windows are **unobserved** and their usage is **Funding unknown**. The Overview shows a funding gap banner naming how many people that affects.
+If people run an agent on a machine without `terma setup`, their allowance windows are **unobserved** and their usage is **Funding unknown**. The Overview shows a funding gap banner naming how many people that affects.
 
 <Note>
   Cursor and Antigravity hooks do not report plan, quota, or billed cost, so their usage is never classified as subscription-covered.
@@ -51,15 +51,5 @@ If people run an agent without the Terma CLI, their allowance windows are **unob
 - **Sources that report cost** — Claude Code's telemetry, for example, or the amount OpenRouter charged — are used as reported.
 - **Everything else** is priced from Terma's catalog of list prices, per model and provider. Session costs priced this way are marked **Estimated** (or **Partly estimated**) in the dashboard.
 
-**Settings → Connections** lists each telemetry source and whether it reports cost.
-
 Each model's page shows its current list prices by provider and their history. See [Models](/dashboard/models).
 
-## From the CLI
-
-`terma usage` reports the provider's cost for each model call that settled in the window — the same basis as the **Notional** view.
-
-```bash
-terma usage --since 30d --group-by provider
-terma usage --since 30d --group-by api-key   # spend on API keys, such as OpenRouter keys
-```

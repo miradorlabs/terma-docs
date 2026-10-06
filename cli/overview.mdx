@@ -1,86 +1,60 @@
 ---
 title: "Terma CLI overview"
 sidebarTitle: "Overview"
-description: "The terma CLI connects your coding agents to Terma, stamps the commits they produce, and reads usage and sessions back from your terminal."
+description: "The terma CLI connects your coding agents to Terma and stamps the commits they produce. It is four commands, and you run one of them once."
 ---
 
-The Terma CLI (`terma`) connects coding agents to Terma, then stamps the commits they produce so agent spend can be traced to shipped code. It is also how you read that activity back from a terminal — or from an agent shelling out to `terma`.
+The Terma CLI (`terma`) connects your coding agents to Terma, then stamps the commits they produce so agent spend can be traced to the code it shipped.
 
-## The workflow
+It is deliberately small. You install it, run `terma setup` once, and you are done: there is no per-repository step, no file to commit, and nothing to configure per project. Your team's collection policy, set in Terma, decides which repositories are collected.
 
-Terma has two onboarding commands with different owners, then two that tell you whether it worked:
+## Four commands
 
-| Command | Run it | What it does |
+| Command | When | What it does |
 |---|---|---|
-| [`terma setup`](/cli/setup) | Once per developer (optional) | Signs you in and records which coding agents you use. It binds no project and writes no repository files. |
-| [`terma install`](/cli/install) | Once per repository | Binds the repository to a Terma project, routes your agents to it, and offers to install commit and agent hooks. |
-| [`terma status`](/cli/status) | Any time | A quick, local view of sign-in, binding, hooks, agents, and queued events. |
-| [`terma doctor`](/cli/doctor) | After installing, or when something looks wrong | Verifies the whole chain end to end, including a scratch commit. |
+| [`terma setup`](/cli/setup) | Once per developer | Signs you in, chooses your team and coding agents, and writes machine-wide hooks. Run it again to switch team or organization, or to repair the machine. |
+| [`terma doctor`](/cli/doctor) | Any time | Verifies the whole chain end to end. Every failure names its fix, usually `terma setup` again. |
+| [`terma update`](/cli/update) | When a release is out | Installs the latest release and refreshes what terma installed. |
+| [`terma teardown`](/cli/teardown) | To leave | Undoes setup on this machine. `--sign-out` also signs you out. |
+
+Every command is safe to run again.
 
 ```bash
-terma setup       # optional: sign in and choose agents
-terma install     # run inside each repository
-terma doctor      # verify the chain end to end
+curl -fsSL https://terma.ai/install.sh | bash
+terma setup
+terma doctor
 ```
 
-## Commands
+Restart any coding agent that was already running after `terma setup`, so it loads the new configuration.
 
-`terma --help` lists the commands you need day to day:
+`terma` has a few more commands that other programs run for it: your agents and git run `terma hook`, the relay's background service runs `terma relay`, and the hooks deliver their queue with `terma spool`. They are hidden from `terma --help`, and you never need to run them yourself.
 
-```text
-setup       Sign in and choose your coding agents (once per developer)
-install     Configure this workspace: point your agents at its project and wire the hooks
-status      Show connections, queued events, and setup readiness
-doctor      Verify the whole chain end to end and report setup readiness
-session     List and inspect the coding sessions your agents ran
-usage       Sum token usage and cost over a time window, by person, agent or model
-org         List and switch between your organizations
-uninstall   Remove everything terma install wrote to this repository
-update      Check for updates, install the latest release, or configure automatic updates
-```
+## How it fits together
 
-Advanced commands for automation and troubleshooting are hidden from `--help` but fully supported: `login`, `logout`, `whoami`, `project`, `principal`, `connect`, `disconnect`, `harness`, `spool`, `config`, and `desktop`. Run `terma <command> --help` on any of them for details.
-
-<CardGroup cols={2}>
-  <Card title="Onboarding" icon="rocket" href="/cli/setup">
-    Sign in, install Terma in a repository, check status, and verify the chain.
-  </Card>
-  <Card title="Insights" icon="chart-bar" href="/cli/usage">
-    Sum usage and cost, list and replay sessions, and resolve principals.
-  </Card>
-  <Card title="Agents and delivery" icon="plug" href="/cli/harnesses">
-    Connect agents directly, inspect their telemetry settings, and manage the event spool.
-  </Card>
-  <Card title="Account and configuration" icon="circle-user" href="/cli/account">
-    Sign in and out, switch organizations, list projects, and configure profiles.
-  </Card>
-</CardGroup>
+<Steps>
+  <Step title="Your team chooses what is collected">
+    An organization admin sets the team's collection policy in Terma (**Team settings → Data collection**): every session, or only the repositories it lists, and whether prompts and tool content are included.
+  </Step>
+  <Step title="Setup wires your machine once">
+    `terma setup` points your agents' telemetry at a relay terma runs on `127.0.0.1` and writes their machine-wide hooks. It does not touch git's configuration and writes nothing into a repository's files.
+  </Step>
+  <Step title="Your agents work as usual">
+    A hook claims each session in a repository your team collects. The relay forwards only those sessions, with only the content the policy allows. Everything else never leaves your machine.
+  </Step>
+  <Step title="Commits are stamped">
+    When the policy asks for commit stamping, the first agent session in a collected repository adds two git hooks to its `.git/hooks`. Commits of files an agent edited get `Agent-Session-Id` and `Agent-Tool` trailers.
+  </Step>
+</Steps>
 
 ## Global flags
 
-These flags work on every command:
-
 | Flag | Description |
 |---|---|
+| `-t`, `--team` | Team for this command (default: the team chosen at setup) |
 | `-o`, `--output` | Output format: `table`, `json`, `yaml`, or `csv` |
-| `-p`, `--project` | Project override for this command (default: the current repository's binding) |
 | `--profile` | Configuration profile to use |
 | `-v`, `--version` | Print the version |
 
-## Output formats
-
-In a terminal, commands print human-readable tables. When stdout is not a terminal — piped to another command, or run by a script or an agent — output switches to JSON automatically, so you never need `-o json` in CI.
-
-```bash title="terma usage --since today"
-$ terma usage --since today
-SOURCE       NAME          USER ID           COST USD  INPUT    OUTPUT  CACHE READ  CACHE WRITE  TOTAL TOKENS  MODEL CALLS
-claude-code  Ada           7c5c8f2e1a9b4d03  18.9180   1344655  150364  12977317    439792       14912128      77
-claude-code  Priya         b31e0d9c77a24f18  7.4400    966138   119922  8413746     246140       9745946       86
-codex        Ada           7c5c8f2e1a9b4d03  5.9220    1142646  52872   3672026     0            4867544       37
-openrouter   (no user id)                    1.2840    1872240  144066  0           0            2016306       127
-TOTAL                                        33.5640   5325679  467224  25063089    685932       31541924      327
-```
-
 <Note>
-  The CLI is open source under the MIT license. Browse the source at [github.com/miradorlabs/terma-cli](https://github.com/miradorlabs/terma-cli). An agent-facing guide to the CLI is published at [terma.ai/cli/llms.txt](https://terma.ai/cli/llms.txt).
+  The CLI is open source under the MIT license: [github.com/miradorlabs/terma-cli](https://github.com/miradorlabs/terma-cli). An agent-facing guide is published at [terma.ai/cli/llms.txt](https://terma.ai/cli/llms.txt).
 </Note>

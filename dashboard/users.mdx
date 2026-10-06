@@ -1,14 +1,14 @@
 ---
 title: "Users and plan usage"
 sidebarTitle: "Users"
-description: "See everyone using a project across every source, and open a person to see their spend, plan allowance windows, models, skills, and sessions."
+description: "See everyone using a team's agents across every source, and open a person to see their spend, plan allowance windows, models, skills, and sessions."
 ---
 
-The **Users** page lists the people and API keys using the project across every source, with their sessions, token usage, and spend in context.
+The **Users** page lists the people and API keys active in the team across every source, with their sessions, token usage, and spend in context.
 
 ## Team usage overview
 
-The top panel summarizes the period — **Active users**, **Tokens burnt**, **Output tokens**, and **Spend** (or **Net spend**), each compared with the previous period — with a chart of tokens over time by person. A **Most active** card highlights who used the project most.
+The top panel summarizes the period — **Active users**, **Tokens burnt**, **Output tokens**, and **Spend** (or **Net spend**), each compared with the previous period — with a chart of tokens over time by person. A **Most active** card highlights who used the most.
 
 ## People table
 
@@ -41,13 +41,6 @@ Select a person to open their page. It is labeled **User**, **API key**, or **Un
 - **Sessions:** their sessions, linked to [session replay](/dashboard/session-replay).
 
 <Note>
-  Allowance windows come from the plan usage your agents report: Claude Code's status line and Codex's hooks, captured when Terma is installed with the CLI. A person who runs an agent without the CLI shows **unobserved** windows, and the Overview shows a funding gap banner. See [Funding and cost views](/concepts/entitlements).
+  Allowance windows come from the plan usage your agents report: Claude Code's status line and Codex's hooks, captured once they have run `terma setup`. A person who runs an agent on a machine without it shows **unobserved** windows, and the Overview shows a funding gap banner. See [Funding and cost views](/concepts/entitlements).
 </Note>
 
-## From the CLI
-
-```bash
-terma usage --since 7d                 # spend by person
-terma usage --user ada --since today   # one person, every agent they use
-terma principal find ada               # the identities behind a name
-```

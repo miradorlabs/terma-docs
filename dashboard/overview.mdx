@@ -1,15 +1,15 @@
 ---
-title: "Project overview"
+title: "Team overview"
 sidebarTitle: "Overview"
-description: "The project Overview shows spend or tokens for a period, a live burn rate, and breakdowns by model, session, person, source, and pull request."
+description: "The team Overview shows spend or tokens for a period, a live burn rate, and breakdowns by model, session, person, source, and pull request."
 ---
 
-Every project opens on its **Overview**: one page that answers how much your agents used, who used it, on which models and tools, and what it produced. Open it from the **Projects** home by selecting a project, or from **Overview** in the left rail.
+Every team opens on its **Overview**: one page that answers how much your agents used, who used it, on which models and tools, and what it produced. Open it from the **Teams** home by selecting a team, or from **Overview** in the left rail.
 
 ## Navigating the dashboard
 
-- **Left rail:** **Projects** (your organization's home), then the project's pages — **Overview**, **Sessions**, **Users**, **Skills**, **MCP**, **Burn map**, **Pull requests**, **Metrics** (**Dashboards**, **Explore**), and **Models** (**Usage**, **Compare**). **Settings** sits at the bottom.
-- **Top bar:** switch organization or project, create a new one, and see the live status of the page's data (**Ready**, **Updated**, **Refreshing…**).
+- **Left rail:** **Teams** (your organization's home), then the team's pages — **Overview**, **Sessions**, **Users**, **Skills**, **MCP**, **Burn map**, **Pull requests**, **Metrics** (**Dashboards**, **Explore**), and **Models** (**Usage**, **Compare**). **Settings** sits at the bottom.
+- **Top bar:** switch organization or team, create a new one, and see the live status of the page's data (**Ready**, **Updated**, **Refreshing…**).
 
 ## Period and cost view
 
@@ -33,7 +33,7 @@ Below the headline, the period is compared with the one before it:
 | **Spend by hour** / **by day** | Spend or tokens over the period, stacked by model |
 | **Model mix** | Each model's share of tokens against its share of spend; select one to open its [model page](/dashboard/models) |
 | **Sessions** | The top sessions, by cost or by time |
-| **People** | The people using the project, by spend |
+| **People** | The people using the team's agents, by spend |
 | **Spend by source** | Spend per source (`claude-code`, `codex`, `openrouter`, …) with its session count |
 | **Recent pull requests** | Pull requests touched by agent sessions in the last 7 days |
 
@@ -43,20 +43,7 @@ Select a source in **Spend by source** to open that source's page: its tokens, s
 
 The Overview tells you when something needs attention:
 
-- **Funding gap** — people are running an agent without plan usage being captured, so Terma cannot tell what a subscription covered. The fix is to install the Terma CLI for them.
+- **Funding gap** — people are running an agent without plan usage being captured, so Terma cannot tell what a subscription covered. The fix is for them to install the Terma CLI and run `terma setup`.
 - **Unmapped principals** — identities that are not mapped to a member of your organization. See [Principal mapping](/dashboard/settings#principal-mapping).
 - **Connect GitHub** — pull request data needs the GitHub connection. See [Pull requests](/dashboard/pull-requests#connect-github).
 
-## From the CLI
-
-The same numbers are available in a terminal:
-
-```bash
-terma usage --since 7d                    # spend by person
-terma usage --since 7d --group-by source  # spend by source
-terma usage --since 7d --group-by model   # spend by model
-```
-
-<Note>
-  `terma usage` reports provider cost, which corresponds to the **Notional** view.
-</Note>

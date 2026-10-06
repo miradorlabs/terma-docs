@@ -1,10 +1,10 @@
 ---
 title: "Sessions and session replay"
 sidebarTitle: "Sessions"
-description: "Browse every agent session in a project, then open one to see its cost, token timeline, subagents, files, git activity, and a full replay."
+description: "Browse every agent session in a team, then open one to see its cost, token timeline, subagents, files, git activity, and a full replay."
 ---
 
-The **Sessions** page lists every agent session in the project with what it used and cost. Open a session to replay it: every prompt, response, and tool call in order, alongside its token timeline, files, and git activity.
+The **Sessions** page lists every agent session in the team with what it used and cost. Open a session to replay it: every prompt, response, and tool call in order, alongside its token timeline, files, and git activity.
 
 ## The sessions list
 
@@ -36,7 +36,7 @@ Expand a row to see its recap, timing (duration, started, last active), git acti
 
 ## Session detail
 
-Open a session to see its full record. **Copy session ID** copies the id used by `terma session` commands and commit trailers.
+Open a session to see its full record. **Copy session ID** copies the id used in commit trailers.
 
 ### Summary
 
@@ -69,12 +69,3 @@ Compactions — where the agent summarized earlier context to make room — appe
 | **Tokens by cache tier** | How the session's tokens split across cache tiers |
 | **Observed performance** | Average model call time, time to first token, tool result time, and compactions |
 
-## From the CLI
-
-```bash
-terma session list --user ada --since yesterday
-terma session events <session-id> --source claude-code --tools-only
-terma session git <session-id> --source claude-code
-```
-
-See [`terma session`](/cli/sessions).

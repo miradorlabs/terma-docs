@@ -1,28 +1,18 @@
 ---
 title: "Connect Cursor to Terma"
 sidebarTitle: "Cursor"
-description: "Terma attributes Cursor's commits and records ordered session observations through Cursor's project hooks. Cost and plan data are not available."
+description: "Cursor support is coming soon: what Terma will attribute and record through Cursor's hooks. Cost and plan data are not available."
 ---
 
 <Info>
-  **Coming soon in onboarding.** Cursor appears as **Coming Soon** in the `terma setup` and `terma install` agent pickers. You can wire its hooks today with `terma install --adapters cursor`; the capabilities below describe what that captures.
+  **Coming soon.** Cursor appears as **Coming Soon** in the `terma setup` agent picker, and you can't connect it yet. This page describes what Terma will capture once it is available. Today, `terma setup` connects [Claude Code](/integrations/claude-code) and [Codex](/integrations/codex).
 </Info>
 
-Cursor's IDE and its `agent` / `cursor-agent` CLI share project hooks in `.cursor/hooks.json`. Terma uses those hooks for commit attribution and for an ordered record of each conversation. Cursor has no telemetry export Terma can use, so support is **partial**: attribution is complete, but cost, plan, and quota data are unavailable.
-
-## Set up
-
-In a repository you have already installed Terma in:
-
-```bash
-terma install --adapters cursor
-```
-
-Commit the updated `.cursor/hooks.json`. Your existing Cursor hooks and their options are preserved, and `terma uninstall` removes only Terma's entries.
+Cursor's IDE and its `agent` / `cursor-agent` CLI share the same hooks. Terma will use those hooks for commit attribution and for an ordered record of each conversation. Cursor has no telemetry export Terma can use, so support will be **partial**: commits are attributed, but cost, plan, and quota data are unavailable.
 
 ## Hooks
 
-| Hook | What Terma records |
+| Hook | What Terma will record |
 |---|---|
 | `sessionStart`, `sessionEnd` | Conversation boundaries |
 | `beforeSubmitPrompt`, `afterAgentResponse`, `stop` | Ordered turn observations, with the selected model and optional token snapshots |
@@ -31,7 +21,7 @@ Commit the updated `.cursor/hooks.json`. Your existing Cursor hooks and their op
 | `postToolUse`, `postToolUseFailure` | Every finished tool call |
 | `subagentStop` | Subagents the conversation spawned, with their files |
 
-`subagentStart` is deliberately not wired: it is a permission gate, and a hook that prints nothing would deny the spawn on a machine without Terma.
+`subagentStart` is not used: it is a permission gate, and a hook that prints nothing would deny the spawn on a machine without terma.
 
 ## What's captured
 
@@ -52,11 +42,5 @@ Commit the updated `.cursor/hooks.json`. Your existing Cursor hooks and their op
 
 ## Privacy
 
-Terma's Cursor hooks do not read or forward prompt or response text, messages, edit contents, error text, transcript paths, or credentials. Cursor may supply the signed-in account email; when it does, Terma includes it as personal metadata.
+Terma's Cursor hooks will not read or forward prompt or response text, messages, edit contents, error text, transcript paths, or credentials. Cursor may supply the signed-in account email; when it does, Terma includes it as personal metadata. As with every agent, your team's collection policy decides which repositories are collected.
 
-## Verify
-
-```bash
-terma harness list cursor   # what Terma supports for Cursor
-terma doctor                # proves hooks stamp a commit and events reach Terma
-```
