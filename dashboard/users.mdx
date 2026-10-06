@@ -8,18 +8,18 @@ The **Users** page lists the people and API keys active in the team across every
 
 ## Team usage overview
 
-The top panel summarizes the period — **Active users**, **Tokens burnt**, **Output tokens**, and **Spend** (or **Net spend**), each compared with the previous period — with a chart of tokens over time by person. A **Most active** card highlights who used the most.
+The top panel summarizes the period — **Active users**, **Tokens burnt**, and **Spend** (**Net spend** in the Net view, **Output tokens** in the Tokens view), each compared with the previous period — with a chart of tokens over time by person. A **Most active** card highlights who ran the most sessions, with their share of the team's sessions and their tokens.
 
 ## People table
 
-Search the table, or sort it by any column:
+Search the table by name:
 
 | Column | Description |
 |---|---|
 | **Person** | The person, or the API key when traffic is not tied to a person |
-| **Funding** | How their usage is paid for — **Subscription**, **Prepaid credits**, or **Metered** — with the plan name when known, such as Max 20x |
+| **Funding** | How their usage is paid for — **Subscription**, **Prepaid credits**, or **Metered** — with the plan name when known, such as Max 20x. A pill shows the account they are on now and fills with how much of its allowance is used; **+N** opens every account they hold |
 | **Tokens** | Tokens in the period |
-| **Spend** | Spend in the current usage view |
+| **Spend** | Spend in the current usage view (hidden in the Tokens view) |
 | **Sessions** | Sessions in the period |
 | **Skills used** | Distinct skills they invoked |
 | **Last active** | Their most recent activity |
@@ -28,17 +28,17 @@ A person who uses several agents appears once when their identities are mapped t
 
 ## A person's page
 
-Select a person to open their page. It is labeled **User**, **API key**, or **Unattributed**, and a source picker narrows it to one agent.
+Select a person to open their page. It is labeled **User**, **API key**, or **Unattributed**, and the **Source** picker narrows it to one source.
 
 - **Summary:** spend, tokens, sessions, commits, and pull requests merged.
-- **Funding:** one card per source they use.
-  - For a subscription, each allowance window — for example **5-hour** and **7-day** — shows how much is used, when it resets, and whether they are on pace, running fast, or at the cap.
+- **Funding:** one table with a row for every account they hold, grouped by source, showing each account's plan, its spend in the period, and its allowances.
+  - For a subscription, each allowance window — for example **5-hour** and **7-day** — shows how much is used, when it resets, and whether they are running fast or at the cap.
   - Prepaid credits show their balance.
-  - Metered sources are marked as having no allowance: they pay list price with no cap.
-  - When a person uses more than one account for a source, each account gets its own tab.
+  - Metered sources show **No allowance, billed at list price**.
+  - A person often holds several accounts for one source. Every account gets its own row, with spend from the sessions that drew on it; a session that switched accounts counts toward the source total only.
 - **Models** and **Providers:** their usage by model and by provider. Select one to narrow the page to it.
 - **What they reach for:** the skills they invoked in the last 30 days, with invocations, sessions, and share.
-- **Sessions:** their sessions, linked to [session replay](/dashboard/session-replay).
+- **Sessions:** their sessions, in the same table as the [Sessions](/dashboard/session-replay) page.
 
 <Note>
   Allowance windows come from the plan usage your agents report: Claude Code's status line and Codex's hooks, captured once they have run `terma setup`. A person who runs an agent on a machine without it shows **unobserved** windows, and the Overview shows a funding gap banner. See [Funding and cost views](/concepts/entitlements).

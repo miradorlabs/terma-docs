@@ -8,7 +8,7 @@ description: "Set your team's data collection policy, manage team API keys, map 
 
 ## Team settings
 
-Team settings holds everything about the current team, in this order: its name, **Data collection**, **Team API keys**, **Principals**, and **Delete team**. Organization admins can rename the team here.
+Team settings holds everything about the current team, in this order: **Team name**, **Data collection**, **Team API keys**, **Principals**, and **Delete team**. Organization admins can rename the team here; the team's name is part of its URL, so renaming it changes the address of its pages.
 
 ### Data collection
 
@@ -26,16 +26,16 @@ Each session reports to the team of the developer who ran it, chosen when they r
 
 ### Team API keys
 
-A team API key is what a tool such as OpenRouter or another OpenTelemetry source exports telemetry with. It is scoped to this team and can only send telemetry — it cannot read anything. The panel shows the settings a tool needs:
+A team API key is what a tool such as OpenRouter or another OpenTelemetry source exports telemetry with. It is scoped to this team. The panel shows the settings a tool needs:
 
 ```bash
 OTEL_EXPORTER_OTLP_ENDPOINT="https://otel.terma.ai"
 OTEL_EXPORTER_OTLP_HEADERS="Authorization=Bearer <team API key>"
 ```
 
-To create a key, enter a name — for example the tool it is for — and select **Create key**. **The full key is shown only once**, so copy it before you select **Done**.
+To create a key, enter a name — for example the tool it is for — and select **Create key**. **The full key is shown only once**, so select **Copy key** before you select **Done**.
 
-The keys table shows each key's name, prefix, status, when it was created, and when it was last used. Search by name, id, or prefix, or paste a full key to find it. **Revoke** a key to stop it working; a revoked key can be re-activated.
+The keys table shows each key's name, prefix, status, when it was created, and when it was last used, ten to a page. Search by name, id, or prefix, or paste a full key to find it. **Revoke** a key to stop it working; **Re-activate** brings a revoked key back.
 
 You don't need a team API key for Claude Code or Codex: `terma setup` signs each developer in and routes their sessions for them.
 
@@ -50,7 +50,9 @@ A principal is an identity a source reported — a user seen by Claude Code, a u
 | **Source** | The source that reported it |
 | **Seat** | The organization member it belongs to |
 | **Alias** | A free-text label for identities with no seat, such as bots or CI keys |
-| **Status** | Whether the identity is seated, has only an alias, or is unmapped |
+| **Status** | **Seated**, **Alias only**, or **Unmapped** |
+
+Search by name, id, alias, or seat; the table shows ten principals to a page. Select a seat to list every identity seated to that member.
 
 When several identities are seated to one person, they roll up as that person across every metric, in every team. For example, seat an OpenRouter API key to the person who owns it so their OpenRouter usage sits alongside their Claude Code and Codex activity.
 
@@ -64,11 +66,11 @@ Organization admins can delete the team: type the team's name to confirm, then s
 
 Open **Settings → Organization**, or **Organization settings** from the organization switcher in the top bar.
 
-- **Organization name** — admins can rename the organization.
+- **Organization name** — admins can rename the organization. The name is part of every dashboard URL, so renaming it changes them.
 - **Invite** — admins invite people by email. Invitees join as members, and don't need a beta invite code.
-- **Invitations** — resend or revoke invitations that haven't been accepted.
+- **Invitations** — admins **Resend** or **Revoke** invitations that haven't been accepted.
 - **Members** — each member's role, status, and when they joined. Admins can change a member's role between **Admin** and **Member**, or remove them.
 - **GitHub** — the organization's GitHub connection, shared by every team. See [Connect GitHub](/dashboard/pull-requests#connect-github).
-- **Danger zone** — to delete an organization, select **Request deletion**; deletion is handled by Terma support.
+- **Danger zone** — to delete an organization, an admin selects **Request deletion**, which emails Terma support.
 
-Members who are not admins see the page read-only.
+Members who are not admins see the page marked **read only**, without the **Invite**, **Invitations**, and **Danger zone** panels.

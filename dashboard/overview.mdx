@@ -9,7 +9,7 @@ Every team opens on its **Overview**: one page that answers how much your agents
 ## Navigating the dashboard
 
 - **Left rail:** **Teams** (your organization's home), then the team's pages — **Overview**, **Sessions**, **Users**, **Skills**, **MCP**, **Burn map**, **Pull requests**, **Metrics** (**Dashboards**, **Explore**), and **Models** (**Usage**, **Compare**). **Settings** sits at the bottom.
-- **Top bar:** switch organization or team, create a new one, and see the live status of the page's data (**Ready**, **Updated**, **Refreshing…**).
+- **Top bar:** switch organization or team, create a new one, switch between light and dark themes, and see the status of the page's data — **Live** on pages that stream, otherwise **Ready**, **Updated**, or **Refreshing…**.
 
 ## Period and cost view
 
@@ -20,9 +20,9 @@ Two controls in the page header apply across the dashboard, and your choice is r
 
 ## Headline and live burn rate
 
-The top card shows **Spend** (or **Tokens**) for the period, with its trend against the period before, and how much of it a subscription covered versus metered billing. Below it are the period's **Tokens**, **Sessions** (with turns), **Active users** (with API keys), and **PRs merged**, plus a token activity calendar.
+The top card shows **Spend** (or **Tokens**) for the period, with its trend against the period before, and how much of it a subscription covered versus metered billing. Beside it are the period's **Tokens**, **Sessions** (with turns), **Active users** (with API keys), and **PRs merged** (with commits recorded), each with its trend, plus a calendar of daily token activity.
 
-**Burn rate now** is live: tokens per minute and dollars per hour over the last 60 seconds, the number of calls in that minute, a last-hour sparkline by token type, and **Burn by model** and **Burn by user** rankings.
+**Burn rate now** is live: tokens per minute and dollars per hour over the last 60 seconds (output tokens per minute in the Tokens view), the number of calls in that minute, a last-hour sparkline for each token type, and **Burn by model** and **Burn by user** rankings.
 
 ## Breakdowns
 
@@ -32,18 +32,19 @@ Below the headline, the period is compared with the one before it:
 |---|---|
 | **Spend by hour** / **by day** | Spend or tokens over the period, stacked by model |
 | **Model mix** | Each model's share of tokens against its share of spend; select one to open its [model page](/dashboard/models) |
-| **Sessions** | The top sessions, by cost or by time |
-| **People** | The people using the team's agents, by spend |
-| **Spend by source** | Spend per source (`claude-code`, `codex`, `openrouter`, …) with its session count |
+| **Sessions** | The top eight sessions, **By time** or **By cost**; expand a row for its detail, as on the [Sessions](/dashboard/session-replay#the-sessions-list) page |
+| **People** | The people using the team's agents, by spend (or tokens) |
+| **Spend by source** | Spend (or tokens) per source (such as `claude` or `codex`) with its session count |
 | **Recent pull requests** | Pull requests touched by agent sessions in the last 7 days |
 
-Select a source in **Spend by source** to open that source's page: its tokens, sessions, active users, and model calls, spend over time, and its models, providers, principals, and sessions.
+Select a source in **Spend by source** to open that source's page: its spend, tokens, sessions, active users, and model calls, spend over time by model, and its models, providers, principals, and sessions. Select a model or provider row to narrow the page to it.
 
 ## Banners
 
-The Overview tells you when something needs attention:
+Banners at the top of the Overview tell you when something needs attention:
 
-- **Funding gap** — people are running an agent without plan usage being captured, so Terma cannot tell what a subscription covered. The fix is for them to install the Terma CLI and run `terma setup`.
-- **Unmapped principals** — identities that are not mapped to a member of your organization. See [Principal mapping](/dashboard/settings#principal-mapping).
-- **Connect GitHub** — pull request data needs the GitHub connection. See [Pull requests](/dashboard/pull-requests#connect-github).
+- **Funding gap** — people are running an agent with no funding visibility, so Terma cannot tell whether their usage is on a subscription. The fix is for them to [install the Terma CLI](/cli/installation) and run [`terma setup`](/cli/setup); **Set up the Terma CLI** opens the team's setup page.
+- **Unmapped principals** — users or API keys with no alias, which show as raw ids. **Map principals** opens [Principal mapping](/dashboard/settings#principal-mapping).
+
+Without the GitHub connection, the **Recent pull requests** panel offers **Connect GitHub** instead. See [Pull requests](/dashboard/pull-requests#connect-github).
 

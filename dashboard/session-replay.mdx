@@ -12,17 +12,19 @@ At the top, four cards summarize the period: **Active now** (sessions reporting 
 
 ### Finding sessions
 
-- **Search** across sessions, users, models, and repositories.
+- **Search** across session ids and titles, users, models, providers, clients, and repositories.
 - **Harness chips** — **All harnesses**, or one per source — appear when more than one source reported.
 - **Filters** for model, provider, effort, client, or person appear as removable chips when you arrive from a link on another page, such as a model or person.
-- **Sort** by cost (or tokens) or by time.
+- **Sort** with **By time** (the default, newest activity first) or **By cost** (**By tokens** in the Tokens view), or select the **Active**, **Turns**, **Tokens**, or **Cost** column header.
+
+The table shows 20 sessions a page, and its count covers every session that matches.
 
 ### Columns
 
 | Column | Description |
 |---|---|
-| **Session** | The session's title and source |
-| **Model** | The model it used |
+| **Session** | The title the agent gave the session over its short id, or the short id alone |
+| **Model** | The model it used, with **+N** when it used several |
 | **User** | The person or API key it is attributed to |
 | **Client** | The agent and its version |
 | **Active** | When it was last active |
@@ -30,19 +32,19 @@ At the top, four cards summarize the period: **Active now** (sessions reporting 
 | **Tokens** | Total tokens (hidden in the Tokens view, where cost shows tokens instead) |
 | **Cost** | Spend in the current usage view |
 
-Rows blink when new activity arrives. A session that spawned subagents has an **N subagents** toggle that expands its tree; the parent's totals include its subagents.
+Rows blink when new activity arrives, and the header counts the sessions **working now**.
 
-Expand a row to see its recap, timing (duration, started, last active), git activity (commits, pushes, branches, repositories), work (tool calls, model calls, subagent runs, cached tokens, files touched, effort, who billed it, client version), and usage over time by model.
+Select the chevron at the start of a row to expand it in place; several rows can be open at once. The detail shows the session's recap, its timing (duration, started, last active), git activity (commits, pushes, pull requests opened and merged, branches, repositories), its work (tool calls, model calls, subagent runs, share of cached tokens, files touched, effort, who billed it, client version), and a chart of its tokens over time by model.
 
 ## Session detail
 
-Open a session to see its full record. **Copy session ID** copies the id used in commit trailers.
+Open a session to see its full record. The header shows the session's title, when the agent named it, and its latest recap. **Copy session ID** copies the id used in commit trailers.
 
 ### Summary
 
-- **Session cost** — a breakdown of the session's cost by how it was funded: **Subscription**, **Prepaid credits**, **Metered**, or **Funding unknown**. An **Estimated** badge means Terma priced tokens the source did not price itself. In the Tokens view this becomes **Session tokens**.
-- The source and model, activity span, turns, tokens (with the share read from cache), and counts of files, commits, pull requests, models, and subagents.
-- For sessions with subagents, an **agents table** lists each agent's model, tokens, and own cost.
+- **Session cost** — a breakdown of the session's cost by how it was funded: **Subscription**, **Prepaid credits**, **Metered**, or **Funding unknown**. An **Estimated** or **Partly estimated** badge means Terma priced, at list price, tokens the source did not price itself. In the Tokens view this becomes **Session tokens**.
+- Who ran it, with which agent and client version, and chips for its model, provider, effort, and who billed it.
+- Its activity span, turns, and tokens (with the share read from cache), and counts of files, commits, pull requests, models, and subagents.
 
 ### Token timeline
 
@@ -51,11 +53,13 @@ The token timeline charts the session's token usage over time by type — cache 
 - **Click** a point to peek at what happened there, and step to the previous or next event.
 - **Drag** to select a range; the replay below narrows to it.
 
-When a session has subagents, an **Agent execution** chart shows when each agent ran, as a timeline or by token usage. Drag to zoom.
+A long session scrolls sideways, about 90 minutes to a screen, with an overview strip below the chart that shows the whole session and pans it.
+
+Subagents run inside their session. When a session has subagent runs, each run is tinted in the chart and the transcript, and an **Agent execution** panel below the token timeline shows the main thread and each run as lanes on one clock. It starts collapsed: select **Show runs** to open it, switch between **Timeline** and **Token usage**, and drag to zoom.
 
 ### Session replay
 
-The replay shows the session's events in order. Filter it to **All**, **Conversation**, **Tools**, or **Errors**, search messages, tools, and files, and expand or collapse tool calls. Navigation buttons jump between your prompts, and **Expand reader** widens the transcript.
+The replay shows the session's events in order. Filter it to **All**, **Conversation**, **Tools**, or **Errors**, search messages, tools, and files, and **Expand tools** or **Collapse tools**. Navigation buttons jump to the start or end of the session and between your prompts, and **Expand reader** widens the transcript.
 
 Compactions — where the agent summarized earlier context to make room — appear as a short note in the transcript. Content appears only if the agent was configured to export it; see [Privacy and security](/concepts/privacy).
 
@@ -64,8 +68,8 @@ Compactions — where the agent summarized earlier context to make room — appe
 | Panel | What it shows |
 |---|---|
 | **Model usage** | Calls and tokens per model, and the providers that served them |
-| **Files changed** | Files created, edited, removed, or only read; select one to filter the replay to it |
+| **Files changed** | Files created, edited, removed, or only read, with lines added and removed; a file's name opens its page on the [Burn map](/dashboard/burn-map) when the map has it, and the button beside it shows this session's edits to it |
 | **Git activity** | Branches, commits, pushes, and pull requests the session produced, with an **AI co-authored** flag |
 | **Tokens by cache tier** | How the session's tokens split across cache tiers |
-| **Observed performance** | Average model call time, time to first token, tool result time, and compactions |
+| **Observed performance** | Average model call time, time to first token (per call and per turn), tool result time, and compactions |
 
