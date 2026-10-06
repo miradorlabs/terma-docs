@@ -1,20 +1,14 @@
 ---
 title: "Install the Terma CLI"
 sidebarTitle: "Installation"
-description: "Install the terma binary with Homebrew, the install script, npm, or a release download. Every installer verifies the release checksum first."
+description: "Install the terma binary with the install script, npm, or Homebrew. Every method verifies the release checksum, and the install script is the one that can keep itself current."
 ---
 
-The Terma CLI (`terma`) is a single static binary with no runtime dependency. Pick the installation method that fits your workflow, then make sure `terma` is on your `PATH` — the hooks Terma installs call it by name.
+The Terma CLI (`terma`) is a single static binary with no runtime dependency. Install it, then run [`terma setup`](/cli/setup).
 
 ## Install the CLI
 
 <CodeGroup>
-
-```bash Homebrew
-brew tap miradorlabs/tap
-brew trust miradorlabs/tap     # once; Homebrew will not load an untrusted tap
-brew install terma
-```
 
 ```bash Install script
 curl -fsSL https://terma.ai/install.sh | bash
@@ -24,13 +18,23 @@ curl -fsSL https://terma.ai/install.sh | bash
 npm install -g @miradorlabs/terma
 ```
 
+```bash Homebrew
+brew tap miradorlabs/tap
+brew trust miradorlabs/tap     # once; Homebrew will not load an untrusted tap
+brew install terma
+```
+
 </CodeGroup>
 
-Every method downloads the same release and verifies it against the release's `checksums.txt` before anything is run.
+Every method installs the same release and verifies it against the release's `checksums.txt`. We recommend the install script: it is the only installation that can [update itself automatically](/cli/update#automatic-updates).
+
+<Warning>
+  **Homebrew does not update terma automatically**, and neither does npm. When terma is owned by a package manager, it only tells you when a new release is out. Run `terma update` (or `brew upgrade terma`) to install it. See [Homebrew and npm installs](/cli/update#homebrew-and-npm-installs).
+</Warning>
 
 ### Install script options
 
-The install script is POSIX `sh`, so `| sh` works too. It picks the archive for your platform, verifies the checksum, and places the binary in `/usr/local/bin` or `~/.local/bin`. Two environment variables change its behavior:
+The install script is POSIX `sh`, so `| sh` works too. It picks the archive for your platform, verifies the checksum, and places the binary in `/usr/local/bin` or `~/.local/bin`.
 
 | Variable | Effect |
 |---|---|
@@ -42,7 +46,7 @@ The install script is POSIX `sh`, so `| sh` works too. It picks the archive for 
 Native binaries for macOS, Linux, and Windows are published on [GitHub Releases](https://github.com/miradorlabs/terma-cli/releases) with checksums and signed provenance. To build from source, clone the repository and run `make install`.
 
 <Note>
-  A source build reports `dev` (or its `git describe`) as its version and is never updated automatically. Run `terma update --force` to switch it to the latest published release.
+  A source build is never updated automatically. Run `terma update --force` to switch it to the latest published release.
 </Note>
 
 ## Verify the installation
@@ -51,28 +55,20 @@ Native binaries for macOS, Linux, and Windows are published on [GitHub Releases]
 terma --version
 ```
 
-<Warning>
-  **`terma` must be on your `PATH`.** Every committed hook is a guarded one-liner that runs `terma hook <event>` only when `command -v terma` finds the binary. If `terma` is not on your `PATH`, hooks exit quietly: nothing fails, but no commits are stamped and no events are recorded. `terma doctor` checks this first and prints the command that fixes it.
-</Warning>
-
-## Keep it up to date
-
-Terma checks for new releases once a day after interactive commands and prints a notice when one is available. Run `terma update` to install it, or `terma update --auto on` to install future releases automatically. See [`terma update`](/cli/update).
-
 ## System requirements
 
 - **Operating system:** macOS or Linux (x86_64 or arm64). Windows binaries are available from GitHub Releases.
-- **Runtime:** none — the binary is self-contained.
-- **Git:** required for commit hooks and attribution. Agent hooks and telemetry also work in folders that are not Git repositories.
+- **Runtime:** none. The binary is self-contained.
+- **Git:** needed for repository matching and commit stamping.
 
 ## Remove the CLI
 
-`terma uninstall` removes what `terma install` wrote to one repository; it does not remove the binary. To remove the binary, use the method you installed with, for example `brew uninstall terma` or `npm uninstall -g @miradorlabs/terma`.
+Run [`terma teardown`](/cli/teardown) first to restore your agents' settings and stop the relay. Then remove the binary with the method you installed it with, for example `npm uninstall -g @miradorlabs/terma` or `brew uninstall terma`.
 
 ## Next step
 
 <CardGroup cols={1}>
-  <Card title="Quickstart" icon="flag-checkered" href="/quickstart">
-    Sign in, install Terma in your first repository, and verify the chain end to end.
+  <Card title="terma setup" icon="rocket" href="/cli/setup">
+    Sign in, choose your team and agents, and wire your machine once.
   </Card>
 </CardGroup>

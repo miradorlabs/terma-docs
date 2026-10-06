@@ -1,73 +1,57 @@
 ---
 title: "Connect Claude Code to Terma"
 sidebarTitle: "Claude Code"
-description: "Terma captures Claude Code sessions through its native OpenTelemetry export, repository hooks for commit attribution, and a status line wrapper for plan usage."
+description: "Terma captures Claude Code sessions through its native OpenTelemetry export, machine-wide hooks for commit attribution, and a status line wrapper for plan usage."
 ---
 
-Claude Code is fully supported: Terma receives its usage and cost through Claude Code's own OpenTelemetry export, attributes the commits it produces through repository hooks, and reads your plan's usage windows through its status line.
+Claude Code is fully supported: Terma receives its usage and cost through Claude Code's own OpenTelemetry export, attributes the commits it produces through machine-wide hooks, and reads your plan's usage windows through its status line.
+
+One choice covers both the Claude Code CLI and Claude Desktop, because they read the same user-level settings. IDE extensions that read those settings are covered too.
 
 ## Set up
 
-Run `terma install` in the repository, choosing **Claude Code** when asked (or record it once with `terma setup`):
+Run `terma setup` once on your machine and choose **Claude Code & Desktop** when asked:
 
 ```bash
-cd your-repo
-terma install --harness claude
+terma setup --harness claude
 ```
 
-Then reload your shell as `install` tells you (for zsh, `source ~/.zshrc`), commit the files it lists, and restart any running Claude Code sessions so they load the new configuration.
+Then restart any running Claude Code sessions so they load the new configuration. See [`terma setup`](/cli/setup) for every option.
+
+Sessions are collected only where your team's collection policy allows: in a repository the policy lists, or everywhere if the policy collects every session. An org admin sets this on **Team settings → Data collection**.
 
 ## How it works
 
-Terma combines three channels.
+Terma combines three channels, all configured in your user-level Claude Code settings (`~/.claude/settings.json`). Nothing is written into your repositories.
 
 ### Telemetry: Claude Code's OpenTelemetry export
 
-Claude Code exports its own traces, events, and metrics. `terma install` points that export at the repository's Terma project by handing Claude Code a per-repository settings document through `claude --settings`. The routing is delivered by a small `claude` shim that `install` puts first on your `PATH`, so running `claude` in this repository reports to this repository's project, and running it elsewhere reports wherever that repository points.
+Claude Code exports its own traces, events, and metrics. `terma setup` points that export at a relay terma runs on your machine, on `127.0.0.1`. The relay forwards only sessions that a hook claimed in a repository your team collects, with your team's key, and drops everything else on your machine. Your team's key never appears in Claude Code's settings.
 
-The project key never appears in a settings file. Claude Code fetches its OTLP headers from a helper script in `~/.config/terma/helpers/` at startup.
+This channel carries model calls with their token counts (input, output, cache read, cache write) and cost, tool calls, and — when your team's policy collects them — your prompts, Claude's responses, and tool input and output.
 
-This channel carries model calls with their token counts (input, output, cache read, cache write) and cost, tool calls, and — unless you turn them off — your prompts, Claude's responses, and tool input and output.
+### Attribution: machine-wide hooks
 
-### Attribution: repository hooks
-
-`install` adds Terma's hooks to the repository's `.claude/settings.json`, which you commit:
+`terma setup` adds Terma's hooks to your user-level Claude Code settings:
 
 | Hook | What Terma records |
 |---|---|
 | `SessionStart` | The session begins, with its account details |
+| `UserPromptSubmit` | A turn begins |
 | `PostToolUse` (matcher `Edit\|Write\|MultiEdit\|NotebookEdit\|Agent\|Task`) | The files each session edits, used to stamp commits, and subagent calls |
 | `Stop`, `StopFailure` | A turn ended, or ended on an error such as a rate limit |
 | `SubagentStart`, `SubagentStop` | Subagents the session spawns, and how each run went |
 | `SessionEnd` | The session ends; queued events are delivered |
 
-Each entry is a guarded one-liner:
+Each entry is a guarded one-liner that calls terma by its full path, so on a machine without terma the hooks do nothing. Your existing hooks are preserved. Hooks never make a network request: they append to a local queue that terma delivers in the background. Set `TERMA_HOOKS=0` to turn them off for one shell or process.
 
-```json .claude/settings.json
-{
-  "hooks": {
-    "SessionStart": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "command -v terma >/dev/null 2>&1 && terma hook session-start || true",
-            "timeout": 10
-          }
-        ]
-      }
-    ]
-  }
-}
-```
-
-Hooks never read what was said — prompts, tool content, and transcripts reach Terma only through Claude Code's own export, under the settings you chose. On a machine without Terma, the hooks do nothing. Your existing hooks in the file are preserved.
+When your team's policy stamps commits, the first session in a collected repository also installs commit hooks in that repository's `.git/hooks`. See [Commit attribution](/concepts/attribution).
 
 ### Plan usage: the status line
 
-To capture your Claude plan's usage windows, `install` places `terma hook statusline` in front of your existing status line command in `~/.claude/settings.json`. Your renderer keeps running unchanged — its output is preserved byte for byte, prefixed by a small `t` marker. If you had no status line, Terma captures silently and shows nothing.
+To capture your Claude plan's usage windows, `terma setup` places terma in front of your existing status line command in `~/.claude/settings.json`. Your renderer keeps running unchanged, and its output is preserved. If you had no status line, Terma captures silently and shows nothing.
 
-Skip this with `terma install --no-statusline`. If your renderer is slow, set `TERMA_STATUSLINE_TIMEOUT=60s` in Claude Code's environment.
+If your renderer is slow, set `TERMA_STATUSLINE_TIMEOUT=60s` in Claude Code's environment.
 
 ## What's captured
 
@@ -76,26 +60,23 @@ Skip this with `terma install --no-statusline`. If your renderer is slow, set `T
 | Sessions, turns, and subagents | Hooks and OpenTelemetry |
 | Model calls, tokens, and cost | OpenTelemetry |
 | Tool calls and their duration | OpenTelemetry |
-| Prompts and responses | OpenTelemetry, unless `--prompts off` |
-| Tool input and output | OpenTelemetry, unless `--exclude-tool-content` |
+| Prompts and responses | OpenTelemetry, when your team's policy collects prompts |
+| Tool input and output | OpenTelemetry, when your team's policy collects tool content |
 | Files edited, for commit attribution | Hooks |
 | Plan usage windows and rate limits | Status line and hooks |
 
 ## Controlling what is sent
 
-- `terma install --prompts off` stops prompt text and model responses for this project.
-- `terma install --exclude-tool-content` stops tool parameters, input, and output.
-- `terma install --signals traces,metrics` limits which signals are exported.
-
-A repository can also narrow what is sent for everyone who works in it with a committed local policy — see [Repository-local policy](/cli/harnesses#repository-local-policy).
+Your team's collection policy decides what leaves your machine. An org admin sets it on **Team settings → Data collection**: which repositories are collected, whether commits are stamped, and whether prompts and tool inputs and results are sent. The local relay removes what the policy does not collect before anything leaves. See [Privacy and data](/concepts/privacy).
 
 ## Verify
 
 ```bash
-terma status    # the Agent line should show Claude Code exporting to this project
-terma doctor    # proves hooks stamp a commit and events reach Terma
+terma doctor
 ```
 
-<Warning>
-  An IDE extension that starts Claude Code by its full path bypasses the `claude` shim and uses your machine-wide settings. `terma doctor` reports when routing is not active. Claude Code's managed settings and a custom `--settings` argument are outside what Terma can check.
-</Warning>
+`doctor` checks your sign-in, whether your team collects the current repository, the hooks, Claude Code's export, and delivery to Terma. Every failure names its fix, usually `terma setup`.
+
+<Note>
+  Claude Code's managed settings and a custom `--settings` argument can override your user-level settings, and are outside what terma can check. An organization that deploys managed settings can include terma's hooks with `terma setup --managed-config <dir>`.
+</Note>

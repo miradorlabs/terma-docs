@@ -1,68 +1,79 @@
 ---
 title: "What Terma collects and how it is protected"
 sidebarTitle: "Privacy and security"
-description: "What leaves your machine, what stays local, how credentials and keys are stored, and the switches that control prompt and tool content."
+description: "What leaves your machine, what stays local, how credentials and keys are stored, and how your team's collection policy controls prompt and tool content."
 ---
 
-Terma collects two kinds of data from your machine: **telemetry** exported by your coding agents, and **hook events** recorded by Terma's own hooks. They follow different rules.
+Terma collects two kinds of data from your machine: **telemetry** exported by your coding agents, and **hook events** recorded by Terma's own hooks. Both are held to your team's collection policy, applied on your machine before anything is sent.
+
+## Which sessions are collected
+
+Your team's collection policy, set by an organization admin on **Team settings → Data collection**, decides which sessions leave your machine:
+
+- **Every session** collects every session on your machine, inside a git repository or not.
+- **Only the repositories listed** collects a session only inside a git working copy whose `origin` remote matches an entry on the list. An empty list collects nothing.
+
+Each entry is `host/owner/name`, such as `github.com/acme/api`, or a longer path for GitLab subgroups. Terma normalises your `origin` before comparing, ignoring case: the host without port or credentials, the path without `.git` or a trailing slash, from `git@host:path`, `https://`, `ssh://`, and `git://` forms. A subdirectory or a linked worktree of a listed repository is collected too; a worktree reads `origin` from its main repository.
+
+These are never collected under a repository list:
+
+- A folder outside git, a repository with no `origin`, or an `origin` that is a local path or `file://` URL.
+- A fork whose `origin` points at your own copy, such as `github.com/you/api`.
+- An SSH host alias such as `git@github-work:acme/api`, which normalises to host `github-work`. Point `origin` at the real host and choose the key with `core.sshCommand` instead. `terma doctor` shows the origin terma sees.
+
+A session that isn't collected is dropped on your machine. Its telemetry never leaves, and the hooks keep only a local note that the session is not collected. Each collected session reports to the team of the developer who ran it.
 
 ## What hooks record
 
 Terma's hooks report structure, not conversation: session ids, file paths an agent edited, tool names, timings, models, and your plan's usage windows. Hooks do not open prompts, tool input or output, error text, or transcripts.
 
-The one exception is Codex, whose export leaves out the assistant's replies. When — and only when — Codex already exports your prompts for the repository, Terma's Codex hook reads that turn's replies from Codex's local session log so the conversation is complete. `--prompts off` withholds them too.
+The one exception is Codex, whose export leaves out the assistant's replies. Terma's Codex hook reads each turn's replies from Codex's local session log so the conversation is complete. Prompts and replies travel together: they leave your machine only when your team's policy collects prompts.
 
 ## What agents export
 
-Prompt text, model responses, and tool content reach Terma only through the agent's own telemetry export, under the switches you chose:
+Prompt text, model responses, and tool content reach Terma only through the agent's own telemetry export, which `terma setup` points at a relay on your machine. Your team's policy decides what the relay forwards:
 
-| Switch | Effect |
+| Policy setting | Effect |
 |---|---|
-| `terma install --prompts off` | Stop sending prompt text and model responses for this project |
-| `terma install --prompts on` | Send them again (the default for a first install) |
-| `terma install --exclude-tool-content` | Stop sending tool parameters, input, and output |
-| `terma install --signals <list>` | Export only some of `traces`, `logs`, and `metrics` |
+| **Don't send prompts** | Prompt text and model responses are removed before anything leaves |
+| **Don't send tool inputs and results** | Tool parameters, input, and output are removed before anything leaves |
 
-Your agents send prompt text and model responses **by default**. `install` does not ask; it keeps your last choice for the project and prints how to change it on its **Prompts** line.
-
-A repository can also commit a policy that narrows what is sent for everyone who works in it. See [Repository-local policy](/cli/harnesses#repository-local-policy).
+Hook events queued on your machine are held to the same policy when they are sent: an event queued before the policy tightened leaves without the content it no longer collects, and one from a repository no longer listed does not leave. Until terma has fetched your team's policy, nothing leaves.
 
 <Note>
-  Codex can stop exporting tool output but cannot suppress native tool arguments. Cursor and Antigravity hooks never read prompt, response, or command text.
+  Cursor and Antigravity hooks never read prompt, response, or command text.
 </Note>
 
 ## What every commit sends
 
-`post-commit` records an event for **every** commit so Terma can measure how much work agents contributed. For a commit with no agent session in it, that event carries only the commit's identity and size: SHA, remote URL with credentials removed, branch, author email, file count, and lines added and deleted. File names and per-file stats are included only on commits that carry a session trailer. Merge and squash commits produce nothing.
+With commit stamping on, `post-commit` records an event for every commit in a collected repository, so Terma can measure how much of the work agents contributed. For a commit with no agent session in it, that event carries only the commit's identity and size: SHA, remote URL, branch, file count, and lines added and deleted. File names and per-file stats are included only on commits that carry a session trailer. Merge and squash commits produce nothing.
 
 ## What stays on your machine
 
 | Item | Where | Protection |
 |---|---|---|
-| CLI credential (organization-scoped) | `~/.config/terma/credentials.json` | Readable only by you (`0600`); access tokens last one hour |
-| Project server keys (`ter_srv_…`) | `~/.config/terma/keys.json` and helper scripts | `0600` / `0700`; write-only for telemetry, scoped to one project |
-| Queued events | `~/.config/terma/spool/` | `0600`; bounded at 16 MB; content held at most 14 days |
+| Sign-in credentials and team keys | The system keychain | Protected by your operating system. With `terma setup --insecure-storage`, or when no keychain is usable, they are kept in plain text under `~/.config/terma` (`%APPDATA%\terma` on Windows), readable only by you |
+| Queued events, relay state, hook state | `~/.local/state/terma` (`%LOCALAPPDATA%\terma` on Windows) | Readable only by you; the queue is bounded at 16 MB and undelivered events are dropped after 14 days |
 
-Nothing secret is ever written into a repository. The committed `.terma/settings.json` names only the project, and the committed hook files are inert on a machine without `terma`.
+Nothing is written into a repository's working tree or committed files. The only thing terma writes inside a repository is its two commit hooks under `.git/hooks`, when your team's policy stamps commits — git neither tracks nor commits them.
 
-A server key is write-only: it can send telemetry into its one project, but cannot read anything. Revoke a key from your project's settings in the Terma web app.
+A team API key is write-only: it can send telemetry into its one team, but cannot read anything. Revoke one from **Team settings → Team API keys**.
 
 ## Sign-in
 
-`terma setup` and `terma login` use a browser handoff with PKCE. You approve the CLI in your browser, and a single-use code valid for 60 seconds is handed to a listener on `127.0.0.1`. The code is useless without a verifier that never leaves the CLI process. `terma logout` revokes your sessions on the server, not just locally.
+`terma setup` uses a browser handoff with PKCE. You approve the CLI in your browser, and a single-use code is handed to a listener on `127.0.0.1`. The code is useless without a verifier that never leaves the CLI process. `terma teardown --sign-out` revokes your sign-in on the server, not just locally.
 
 ## Hooks never get in your way
 
-- Every hook ends in `|| true`, so a missing or broken `terma` never fails a commit.
-- Hooks never make a network request; they append to the local spool, which is delivered in the background.
-- `prepare-commit-msg` finishes in under 50 ms, a budget enforced in CI.
-- `TERMA_HOOKS=0` turns every Terma hook off immediately.
+- Every hook is guarded, so a missing or broken `terma` never fails a commit.
+- Hooks never make a network request; they append to a local queue, which is delivered in the background with retry and backoff.
+- `prepare-commit-msg` finishes in under 50 ms.
+- `TERMA_HOOKS=0` turns terma's hooks off for one shell or process.
 
 ## Limits worth knowing
 
 - **Attribution is not authentication.** Commit trailers and agent identities attribute work among colleagues. Anyone with commit access can write a trailer by hand, so treat them as who to credit the work to, not as proof of who did it.
-- **Processes running as you** can read your credentials and keys. If you run untrusted code, run `terma logout` and revoke the project key in the web app.
-- **Codex's key is visible to local processes.** Per-repository Codex routing passes the project's telemetry key as a launch argument, which any process running as your user can see while the session runs. It is a write-only, project-scoped key that you can revoke.
+- **Processes running as you** can reach your credentials and keys. If you run untrusted code, run `terma teardown --sign-out`.
 
 ## Reporting a vulnerability
 

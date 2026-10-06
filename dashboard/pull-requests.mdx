@@ -10,14 +10,14 @@ The **Pull requests** page shows your repositories' pull requests and the agent 
 
 Pull request data comes from GitHub. The connection belongs to the whole organization, and only organization admins can manage it.
 
-1. Open **Settings → Connections** in any project, or select **Manage GitHub connection** on the Pull requests page.
+1. Open **Settings → Organization**, or select **Manage GitHub connection** on the Pull requests page.
 2. In the **GitHub** panel, select **Install on GitHub** and install the Terma app on your GitHub organization.
 3. Select **Connect GitHub** to sign in to GitHub and finish the connection.
 
 Once connected, the panel lists each connected GitHub account with its status and a **Disconnect** option.
 
 <Note>
-  GitHub is optional. Commit attribution works without it — trailers are stamped locally by `terma install`'s hooks, which work with GitHub, GitLab, Bitbucket, self-hosted Git, and local repositories. The GitHub connection adds pull requests, merges, and issues beside your telemetry.
+  GitHub is optional. Commit attribution works without it — trailers are stamped locally by terma's commit hooks, which work with GitHub, GitLab, Bitbucket, and self-hosted Git. The GitHub connection adds pull requests, merges, and issues beside your telemetry.
 </Note>
 
 ## Browsing pull requests
@@ -48,7 +48,7 @@ Expand a pull request to see its sessions. Each is marked **Explicit PR activity
 
 ## How sessions are linked
 
-A session is linked to a pull request through confirmed Git activity from the session's own tool calls, such as the commits and pushes it made and the pull requests it opened. Open a session's replay to see that activity in its **Git activity** panel, or run `terma session git`.
+A session is linked to a pull request through confirmed Git activity from the session's own tool calls, such as the commits and pushes it made and the pull requests it opened. Open a session's replay to see that activity in its **Git activity** panel.
 
 <Note>
   Linked cost is the cost of the linked sessions, not a per-commit cost. When one session is linked to several pull requests, its whole usage is shown against each of them, so adding linked cost across those pull requests counts that session more than once.
@@ -56,4 +56,4 @@ A session is linked to a pull request through confirmed Git activity from the se
 
 ## On the Overview
 
-The project **Overview** shows **PRs merged** for the period and a **Recent pull requests** panel with the pull requests agent sessions touched in the last 7 days. See [Project overview](/dashboard/overview).
+The team **Overview** shows **PRs merged** for the period and a **Recent pull requests** panel with the pull requests agent sessions touched in the last 7 days. See [Overview](/dashboard/overview).

@@ -88,36 +88,12 @@
             ]
           },
           {
-            "group": "Onboarding",
+            "group": "Commands",
             "pages": [
               "cli/setup",
-              "cli/install",
-              "cli/status",
               "cli/doctor",
-              "cli/update"
-            ]
-          },
-          {
-            "group": "Insights",
-            "pages": [
-              "cli/usage",
-              "cli/sessions",
-              "cli/principals"
-            ]
-          },
-          {
-            "group": "Account and configuration",
-            "pages": [
-              "cli/account",
-              "cli/project",
-              "cli/configuration"
-            ]
-          },
-          {
-            "group": "Advanced",
-            "pages": [
-              "cli/harnesses",
-              "cli/spool"
+              "cli/update",
+              "cli/teardown"
             ]
           }
         ]
@@ -136,6 +112,46 @@
     {
       "source": "/dashboard/production",
       "destination": "/dashboard/overview"
+    },
+    {
+      "source": "/cli/install",
+      "destination": "/cli/setup"
+    },
+    {
+      "source": "/cli/status",
+      "destination": "/cli/doctor"
+    },
+    {
+      "source": "/cli/usage",
+      "destination": "/dashboard/overview"
+    },
+    {
+      "source": "/cli/sessions",
+      "destination": "/dashboard/session-replay"
+    },
+    {
+      "source": "/cli/principals",
+      "destination": "/dashboard/users"
+    },
+    {
+      "source": "/cli/account",
+      "destination": "/cli/setup"
+    },
+    {
+      "source": "/cli/project",
+      "destination": "/cli/setup"
+    },
+    {
+      "source": "/cli/configuration",
+      "destination": "/cli/setup"
+    },
+    {
+      "source": "/cli/harnesses",
+      "destination": "/cli/setup"
+    },
+    {
+      "source": "/cli/spool",
+      "destination": "/cli/doctor"
     }
   ],
   "footer": {

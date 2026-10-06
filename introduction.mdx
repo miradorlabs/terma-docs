@@ -8,27 +8,27 @@ Terma gives engineering teams one place to see what their AI coding agents are a
 
 <CardGroup cols={2}>
   <Card title="Quickstart" icon="rocket" href="/quickstart">
-    Create a project, install the CLI, and see your first session.
+    Create a team, install the CLI, and see your first session.
   </Card>
   <Card title="How Terma works" icon="map" href="/concepts/overview">
-    Projects, sessions, principals, attribution, and cost views.
+    Teams, sessions, principals, attribution, and cost views.
   </Card>
   <Card title="Claude Code" icon="plug" href="/integrations/claude-code">
     What Terma captures from Claude Code and how.
   </Card>
   <Card title="CLI reference" icon="terminal" href="/cli/overview">
-    Every `terma` command, from `install` to `usage`.
+    Four commands: `setup`, `doctor`, `update`, and `teardown`.
   </Card>
 </CardGroup>
 
 ## How it works
 
 <Steps>
-  <Step title="Install Terma in a repository">
-    Run `terma install` in a repository. It binds the repository to a Terma project, points your coding agents at that project, and writes commit and agent hooks into files you commit — so one merged pull request onboards everyone who works there.
+  <Step title="Set up your machine once">
+    Run `terma setup`. It signs you in, chooses your team, points your coding agents at a relay on your machine, and writes their machine-wide hooks. Nothing is written into your repositories: your team's collection policy decides which repositories are collected.
   </Step>
   <Step title="Work as usual">
-    Your agents export their usage to Terma as they run. Terma's hooks record which files each session edits and stamp your commits with `Agent-Session-Id` and `Agent-Tool` trailers. Nothing waits on the network.
+    Your agents export their usage to Terma as they run. Terma's hooks record which files each session edits and, when your team's policy turns on commit stamping, stamp your commits with `Agent-Session-Id` and `Agent-Tool` trailers. Nothing waits on the network.
   </Step>
   <Step title="See where the effort goes">
     The dashboard shows spend and a live burn rate, every session with a full replay, usage by person and model, the pull requests agent sessions contributed to, and a burn map of agent work that has — and has not — reached Git.
@@ -39,15 +39,15 @@ Terma gives engineering teams one place to see what their AI coding agents are a
 
 | Tool | Support |
 |---|---|
-| **Claude Code** | Full: telemetry, commit attribution, and plan usage |
-| **Codex CLI** and **Codex Desktop** | Full: telemetry, commit attribution, and plan usage |
-| **OpenCode** | Telemetry and attribution through a plugin; advanced setup |
-| **Cursor** | Commit attribution and session observations; no cost data |
-| **Antigravity CLI** | Commit attribution and session observations; no cost data |
+| **Claude Code** and **Claude Desktop** | Full: telemetry, commit attribution, and plan usage |
+| **Codex** (TUI and Desktop) | Full: telemetry, commit attribution, and plan usage |
+| **OpenCode** | Coming soon |
+| **Cursor** | Coming soon |
+| **Antigravity CLI** | Coming soon |
 | **OpenRouter** | Every routed call, through OpenRouter Broadcast |
-| **Any OpenTelemetry source** | Send to your project with a server key |
+| **Any OpenTelemetry source** | Send to your team with a team API key |
 
-Cursor, OpenCode, and Antigravity are marked **Coming Soon** in the CLI's onboarding; each integration page explains what you can set up today.
+Cursor, OpenCode, and Antigravity are marked **Coming Soon** in `terma setup`; each integration page describes what Terma will capture.
 
 <Note>
   Terma is in private beta. If sign-up asks for an invite code, enter the one from your invite. People invited by an organization don't need a code.

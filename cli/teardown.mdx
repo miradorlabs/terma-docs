@@ -1,0 +1,43 @@
+---
+title: "terma teardown: undo setup on this machine"
+sidebarTitle: "terma teardown"
+description: "terma teardown restores your coding agents' settings, stops the local relay, and deletes terma's local state. Your sign-in is kept unless you pass --sign-out."
+---
+
+`terma teardown` is the machine-wide undo of [`terma setup`](/cli/setup). It is safe to run again.
+
+## Usage
+
+```bash
+terma teardown              # undo setup, keep your sign-in
+terma teardown --sign-out   # undo setup and sign out
+```
+
+## What it does
+
+<Steps>
+  <Step title="Restores your coding agents">
+    The settings terma changed in your agents (their telemetry exporters, status line, and notifier) are restored, and their machine-wide hooks are removed.
+  </Step>
+  <Step title="Stops the local relay">
+    The relay stops, its background service is removed, and its state is deleted, including any telemetry not yet delivered.
+  </Step>
+  <Step title="Deletes what the hooks kept">
+    Session records, cursors, any events not yet delivered, and the teams' collection policies are deleted. The next `terma setup` fetches the policy again.
+  </Step>
+</Steps>
+
+The commit hooks terma added to repositories stay. With terma gone, each one only runs the hook it displaced, so your commits are unaffected.
+
+Your sign-in is kept, so `terma setup` sets the machine up again in seconds. Agents still running keep reporting once you do, without a restart. `--sign-out` also revokes this machine's sign-in, and the next setup signs you in again.
+
+## Flags
+
+| Flag | Description |
+|---|---|
+| `--sign-out` | Also revoke this machine's sign-in |
+| `-y`, `--yes` | Skip the confirmation prompt |
+
+## Remove the binary
+
+`teardown` does not remove `terma` itself. Remove it with the method you installed it with, for example `npm uninstall -g @miradorlabs/terma` or `brew uninstall terma`.

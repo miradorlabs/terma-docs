@@ -1,18 +1,47 @@
 ---
-title: "Settings: principals, connections, and your organization"
+title: "Settings: your team and your organization"
 sidebarTitle: "Settings"
-description: "Map identities to people, manage server keys, CLI logins, and the GitHub connection, and manage your organization's members and roles."
+description: "Set your team's data collection policy, manage team API keys, map identities to people, and manage your organization's members, roles, and GitHub connection."
 ---
 
-**Settings**, at the bottom of the left rail, has four pages: **Project**, **Principals**, **Connections**, and **Organization**.
+**Settings**, at the bottom of the left rail, has two pages: **Team** and **Organization**.
 
-## Project
+## Team settings
 
-The project page links to the other settings pages. Organization admins can also delete the project here: type the project's name to confirm, then select **Delete project permanently**.
+Team settings holds everything about the current team, in this order: its name, **Data collection**, **Team API keys**, **Principals**, and **Delete team**. Organization admins can rename the team here.
 
-## Principal mapping
+### Data collection
 
-A principal is an identity a source reported — a user seen by Claude Code, a user seen by Codex, or an API key seen by OpenRouter. The **Principals** page maps each one to the organization member it belongs to. The mapping applies across the whole organization.
+The team's collection policy decides what every member's `terma` CLI sends. Everyone in the organization can read it; only organization admins can select **Edit**.
+
+| Setting | What it controls |
+|---|---|
+| **Repositories** | **Every session** collects every session on members' machines, in any repository or outside git. **Only the repositories listed** collects sessions only in the repositories you list. An empty list collects nothing. |
+| **Commits** | **Stamp commits with the agent session** installs commit hooks in repositories where an agent works, so commits are linked to the session that wrote them. Existing hooks keep running. |
+| **Never sent** | **Don't send prompts** and **Don't send tool inputs and results** remove that content on each member's machine before anything leaves it. |
+
+Each repository is written as `host/owner/name`, for example `github.com/acme/api` (a longer path for GitLab subgroups). Type or paste an entry — a clone URL is converted for you — or, with GitHub connected, select **Add from GitHub**. A session is collected only inside a git working copy whose `origin` remote matches an entry, ignoring case. See [Privacy and data](/concepts/privacy) for how the CLI matches repositories.
+
+Each session reports to the team of the developer who ran it, chosen when they ran `terma setup`.
+
+### Team API keys
+
+A team API key is what a tool such as OpenRouter or another OpenTelemetry source exports telemetry with. It is scoped to this team and can only send telemetry — it cannot read anything. The panel shows the settings a tool needs:
+
+```bash
+OTEL_EXPORTER_OTLP_ENDPOINT="https://otel.terma.ai"
+OTEL_EXPORTER_OTLP_HEADERS="Authorization=Bearer <team API key>"
+```
+
+To create a key, enter a name — for example the tool it is for — and select **Create key**. **The full key is shown only once**, so copy it before you select **Done**.
+
+The keys table shows each key's name, prefix, status, when it was created, and when it was last used. Search by name, id, or prefix, or paste a full key to find it. **Revoke** a key to stop it working; a revoked key can be re-activated.
+
+You don't need a team API key for Claude Code or Codex: `terma setup` signs each developer in and routes their sessions for them.
+
+### Principal mapping
+
+A principal is an identity a source reported — a user seen by Claude Code, a user seen by Codex, or an API key seen by OpenRouter. The **Principals** panel maps each one to the organization member it belongs to. The mapping applies across the whole organization.
 
 | Column | Description |
 |---|---|
@@ -20,59 +49,26 @@ A principal is an identity a source reported — a user seen by Claude Code, a u
 | **Type** | **User** or **API key** |
 | **Source** | The source that reported it |
 | **Seat** | The organization member it belongs to |
-| **Alias** | A friendly, URL-safe name to show instead |
-| **Status** | **Seated**, **Alias only**, **Unmapped**, or **Unknown seat** |
+| **Alias** | A free-text label for identities with no seat, such as bots or CI keys |
+| **Status** | Whether the identity is seated, has only an alias, or is unmapped |
 
-When several identities are seated to one person, they roll up as that person across every metric, in every project. For example, seat an OpenRouter API key to the person who owns it so their OpenRouter usage sits alongside their Claude Code and Codex activity.
+When several identities are seated to one person, they roll up as that person across every metric, in every team. For example, seat an OpenRouter API key to the person who owns it so their OpenRouter usage sits alongside their Claude Code and Codex activity.
 
-Only organization admins can change the mapping; everyone else sees it read-only. The Overview shows a banner when a project has unmapped principals.
+Only organization admins can change the mapping; everyone else sees it read-only. The Overview shows a banner when a team has unmapped principals.
 
-<Tip>
-  From the CLI, `terma principal list` and `terma principal find` show the catalog, including aliases. `--user` on `terma usage` and `terma session` accepts an alias as well as a name or id.
-</Tip>
+### Delete team
 
-## Connections
-
-### Repositories
-
-Start inside your repository: run `terma install` there. It works with GitHub, GitLab, Bitbucket, self-hosted Git, and local repositories. To see pull requests beside your telemetry, connect GitHub here too — see [Connect GitHub](/dashboard/pull-requests#connect-github).
-
-**Project setup** at the top of the page reopens the setup guide for connecting your first tools.
-
-### Telemetry sources
-
-Lists each source that has sent telemetry to the project, with the service name it reports as, whether it reports cost, and whether Terma's mapping for it is verified.
-
-### Server keys
-
-A server key is what an agent or tool exports telemetry with. It is scoped to this project and can only send telemetry — it cannot read anything. The page shows the settings a tool needs:
-
-```bash
-OTEL_EXPORTER_OTLP_ENDPOINT="https://otel.terma.ai"
-OTEL_EXPORTER_OTLP_HEADERS="Authorization=Bearer <server key>"
-```
-
-To create a key, enter a name — for example the machine or tool it is for — and select **Create key**. **The full key is shown only once**, so copy it before you select **Done**.
-
-The keys table shows each key's name, prefix, status, when it was created, and when it was last used. **Revoke** a key to stop it working; a revoked key can be re-activated.
-
-<Note>
-  `terma install` and `terma connect` create keys for you, named after the agent and machine, and store them in your home directory. `terma disconnect` leaves the key active, since it may be used elsewhere — revoke it here when you no longer need it.
-</Note>
-
-### CLI logins
-
-Lists the active `terma` CLI sign-ins for your account, each with its label (by default, the machine's hostname) and when it was last used.
+Organization admins can delete the team: type the team's name to confirm, then select **Delete team permanently**.
 
 ## Organization
 
 Open **Settings → Organization**, or **Organization settings** from the organization switcher in the top bar.
 
 - **Organization name** — admins can rename the organization.
-- **Invite members** — admins invite people by email. Invitees join as members, and don't need a beta invite code.
-- **Pending invitations** — resend or revoke invitations that haven't been accepted.
+- **Invite** — admins invite people by email. Invitees join as members, and don't need a beta invite code.
+- **Invitations** — resend or revoke invitations that haven't been accepted.
 - **Members** — each member's role, status, and when they joined. Admins can change a member's role between **Admin** and **Member**, or remove them.
+- **GitHub** — the organization's GitHub connection, shared by every team. See [Connect GitHub](/dashboard/pull-requests#connect-github).
+- **Danger zone** — to delete an organization, select **Request deletion**; deletion is handled by Terma support.
 
 Members who are not admins see the page read-only.
-
-To delete an organization, select **Request deletion**; deletion is handled by Terma support.

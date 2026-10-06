@@ -1,15 +1,10 @@
 ---
-title: "terma setup: sign in and choose your agents"
+title: "terma setup: wire your machine once"
 sidebarTitle: "terma setup"
-description: "terma setup signs you in through the browser and records which coding agents you use. It is optional and runs once per developer."
+description: "terma setup signs you in, chooses your team and coding agents, and writes machine-wide hooks. It is the only onboarding step, once per developer."
 ---
 
-`terma setup` gets a machine ready to use Terma. It does two things and nothing more — it binds no project, configures no telemetry, and writes no repository files:
-
-1. **Signs you in.** Your browser opens on Terma, you choose an organization and approve the CLI, and a single-use code is handed back to a listener on `127.0.0.1`. A sign-in you already approved is reused.
-2. **Records which coding agents you use**, so [`terma install`](/cli/install) never has to ask again.
-
-`setup` is optional. `terma install` signs you in and asks for your agents itself when you have not run it. The real configuration — pointing an agent at a project and wiring hooks — happens per repository, in `terma install`.
+`terma setup` is the only onboarding step. Run it once per developer. There is nothing to run per repository: your team's collection policy decides which repositories are collected.
 
 ## Usage
 
@@ -17,61 +12,111 @@ description: "terma setup signs you in through the browser and records which cod
 terma setup
 ```
 
-On a terminal, setup shows a checklist:
+## What it does
+
+<Steps>
+  <Step title="Signs you in">
+    Your browser opens on Terma, you approve the CLI, and a single-use code is handed back to terma on `127.0.0.1` (PKCE). A sign-in that still works is reused. `--no-browser` prints the URL instead of opening it.
+  </Step>
+  <Step title="Records which coding agents you use">
+    A checklist preselects the agents installed on your machine. Each choice covers an agent's CLI and its desktop app, which share the agent's user-level settings:
+
+    | Choice | `--harness` value |
+    |---|---|
+    | **Claude Code & Desktop** | `claude` |
+    | **Codex TUI & Desktop** | `codex` |
+
+    Cursor, OpenCode, and Antigravity appear as **Coming Soon** and cannot be selected yet.
+  </Step>
+  <Step title="Chooses your team and fetches its policy">
+    `--team` names the team. Without it, setup uses your organization's only team, or shows a picker. Setup then fetches the team's collection policy and shows what it collects.
+  </Step>
+  <Step title="Points your agents at the local relay">
+    Your agents' user-level telemetry is sent to a relay terma runs on `127.0.0.1`, as a per-user background service. The relay forwards only sessions in repositories your team collects, with only the content the policy allows. Because Claude Desktop, Codex Desktop, and IDE extensions read the same user-level settings, they are covered too.
+  </Step>
+  <Step title="Writes the machine-wide hooks">
+    Each agent's machine-wide hooks record its sessions and the files it edits. Setup approves terma's own Codex hooks for you. It does not change git's configuration, and writes nothing into a repository's working tree or committed files.
+  </Step>
+</Steps>
+
+Setup ends with a summary:
 
 ```text
-Which coding agents do you use? (space toggles, enter confirms)
+  ✓ Signed in     ada@example.com (Acme)
+  ✓ Agents        Claude Code & Desktop, Codex TUI & Desktop
+  ✓ Team          Payments
+  ✓ Collects      sessions in the team's repositories (github.com/acme/checkout-api),
+                  with prompts and tool content
+  ✓ Relay         running in the background
+  ✓ Check-in      this machine reported to your organization
+
+✓ Setup complete
+
+Next steps:
+  • Run `terma doctor` any time to see what terma is collecting and check it end to end.
 ```
 
-Agents it finds installed on your machine, or that you recorded before, are preselected. The available choices are:
+<Note>
+  Restart any coding agent that was already running. An open Claude Code or Codex session keeps the configuration it started with.
+</Note>
 
-| Choice | Notes |
+## Run it again
+
+Setup is safe to run again, and running it again is how you change anything:
+
+| To | Run |
 |---|---|
-| **Claude Code** | Telemetry and commit attribution |
-| **Codex CLI** | The `codex` shell command |
-| **Codex Desktop** | The desktop app, which uses a separate capture path — see [Codex](/integrations/codex#codex-desktop) |
+| Repair the machine | `terma setup` |
+| Switch team | `terma setup --team <name-or-id>` |
+| Switch organization | `terma setup --org <name-or-id>` |
+| Change your agents | `terma setup` and change the checklist, or `--harness` |
+| Move the relay off a busy port | `terma setup --relay-addr 127.0.0.1:<port>` |
 
-Cursor, OpenCode, and Antigravity appear in the list marked **Coming Soon** and cannot be selected yet. See [Integrations](/integrations/cursor) for what is available for them today.
+`terma login` is an alias for `terma setup`.
 
-When setup finishes, it prints the agents it recorded and the next step:
+## Which repositories are collected
 
-```text
-Agents recorded: Claude Code, Codex.
+Your team's collection policy is set in Terma by an organization admin (**Team settings → Data collection**). It collects either every session on the machine, inside git or not, or only the repositories it lists.
 
-Done! Now run `terma install` in each codebase you want to instrument with terma.
-```
+A listed repository is written `host/owner/name`, for example `github.com/acme/api`; a longer path matches a GitLab subgroup. A session is collected only inside a git working copy whose `origin` remote matches an entry, ignoring case. HTTPS, SSH, and `git@host:path` forms all match, with or without `.git`, and a linked worktree uses its main repository's `origin`. A folder outside git, or a repository with no `origin`, is never collected by a list. An empty list collects nothing.
+
+<Tip>
+  An SSH host alias such as `git@github-work:acme/api` does not match `github.com/acme/api`. Point `origin` at the real host and choose the key with `core.sshCommand`. `terma doctor` shows the `origin` terma sees.
+</Tip>
+
+Each session reports to the team of the developer who ran it, so two developers on different teams in one repository each report to their own.
 
 ## Flags
 
 | Flag | Description |
 |---|---|
-| `--harness <list>` | Comma-separated agents to record, skipping the picker: `claude`, `codex`, `codex-desktop` |
-| `-y`, `--yes` | Skip the picker and record every available agent installed on this machine |
+| `--harness <list>` | Comma-separated agents to record: `claude`, `codex`. Default: a picker |
+| `-y`, `--yes` | Skip the browser prompt and picker; record every available agent installed |
+| `-t`, `--team <name-or-id>` | Team to report to |
+| `--org <name-or-id>` | Organization to sign in to |
 | `--no-browser` | Print the sign-in URL instead of opening a browser |
+| `--relay-service on\|off` | Run the relay as a background service (`on`, the default) or start it on demand |
+| `--relay-addr <address>` | Move the relay to this loopback address (default `127.0.0.1:43180`) |
+| `--insecure-storage` | Save credentials in plain text instead of the system keychain |
+| `--managed-config <dir>` | Write the machine-wide hooks as managed configuration into this directory, for your organization to deploy, and exit |
+| `--managed-terma <path>` | With `--managed-config`: where terma is installed on the managed machines |
+| `-v`, `--verbose` | Show each step and what it wrote |
 
 ```bash title="Non-interactive setup"
-terma setup --harness claude,codex --no-browser
+terma setup --yes --harness claude,codex --team Payments
 ```
 
 ## What gets stored
 
-Setup writes only to your Terma configuration directory, `~/.config/terma/`:
+- Your sign-in and team keys are kept in the system keychain, or in plain text under `~/.config/terma` with `--insecure-storage`.
+- Your choices (organization, team, agents) are kept in `~/.config/terma`.
+- What terma writes as it runs (the event queue, the relay, the hooks' state) lives in `~/.local/state/terma`.
+- Your agents' user-level settings gain terma's telemetry exporter and hooks. [`terma teardown`](/cli/teardown) restores them.
 
-- `credentials.json` — your organization-scoped CLI credential, readable only by you (`0600`)
-- `config.json` — your profile, organization, and the agents you chose
+## Next step
 
-Nothing is written to any repository and no agent's settings are changed.
-
-## Next steps
-
-Run `terma install` in each repository you want to report to Terma, then check the result:
-
-```bash
-cd your-repo
-terma install
-terma doctor
-```
-
-<Note>
-  If you chose **Codex Desktop**, approve Terma's hooks in the app after running `terma install` in a repository: open **Settings → Hooks → Review** in Codex Desktop and approve the Terma entries.
-</Note>
+<CardGroup cols={1}>
+  <Card title="terma doctor" icon="stethoscope" href="/cli/doctor">
+    Check the whole chain end to end.
+  </Card>
+</CardGroup>
