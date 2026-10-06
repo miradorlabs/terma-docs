@@ -1,50 +1,51 @@
 ---
 title: "Models"
 sidebarTitle: "Models"
-description: "Compare the models your agents use by calls, tokens, spend, sessions, and people, put up to four side by side, and see each model's list prices."
+description: "See the models your agents use by calls, tokens, spend, sessions, and people, put up to four side by side, and see each model's list prices."
 ---
 
-The **Models** pages show which models your agents use, how much, and at what price. **Models → Usage** lists them; **Models → Compare** puts them side by side.
+The **Models** page shows which models your agents use, how much, and at what price. It has two views, **Usage** and **Compare**, which you switch between in the bar at the top of the page or from **Models** in the left rail.
+
+The bar stays in view as you scroll. Besides the view switch, it holds four color slots for the models you compare: pick a model into an empty slot, remove one, select **Compare N models** to open the comparison, or **Clear** the picks.
 
 ## Usage
 
-Search for a model, or sort by **Highest spend** (or **Most tokens**), **Most calls**, **Most sessions**, **Most people**, or **Model name**.
+**Models → Usage** lists every model the team used in the period, in order by model name. Search for a model, or sort by **Highest spend** (**Most tokens** in the Tokens view), **Most calls**, **Most tokens**, **Most sessions**, **Most people**, or **Model name**.
 
 | Column | Description |
 |---|---|
-| **Model** | The model, linking to its page |
+| **Model** | The model and the providers that served it, linking to its page |
 | **Calls** | Model calls in the period |
 | **Input tokens**, **Output tokens** | Tokens sent and received |
-| **Spend** | Spend in the current usage view (or input plus output tokens in the Tokens view) |
+| **Spend** | Spend in the current usage view (**Input + output tokens** in the Tokens view) |
 | **Sessions** | Sessions that used the model |
-| **People** | People who used it; select the count to see who |
+| **People** | People who used it; select the count to see who, each linked to their page |
 | **Tool calls** | Tool calls made in its turns |
 | **Spend share** / **Token share** | Its share of the team's total |
 
-Tick the **Compare** checkbox on up to four models to compare them.
+Select the ring at the start of a row to pick that model for comparison; it fills with the model's slot color.
 
 ## Compare
 
-Compare puts up to four models side by side. Pick them in the bar at the top of the page, or from the Usage list.
+**Models → Compare** puts up to four models side by side, one column each. With fewer than two picked, it suggests the team's two busiest models to start with. The picked models are part of the URL, so a link shares the comparison.
 
-Daily charts show each model's spend, tokens, model calls, people, share served from cache, time to first token, and failed calls. Below them, a table compares:
+The first row is each model's spend (or tokens) and its share of the team's total; with two models, the larger also shows how many times the other it is, such as **3.0×**, or **about the same**. Below it, the table compares:
 
 - **What it burnt** — tokens and model calls
 - **The work in its turns** — sessions, tool calls, compactions, and subagents
-- **Per unit** — cost per million tokens, share served from cache, output per call, time to first token, and failed calls
-- **List price, per 1M tokens** — input, output, and cache prices, with a pop-up that ranks providers
-- **Where the tokens go** — the mix of input, output, cache read, and cache write
-- **Who uses it** — the people who called it
+- **Per unit** — cost per 1M tokens, share served from cache, output per call, time to first token, and failed calls. The leader of each is ticked **Better**.
+- **List price, per 1M tokens** — input, output, cache read, and cache write, at each model's cheapest provider; the cheapest model is ticked **Cheapest**. **See prices** opens every provider's rates, which you can rank by tier.
+- **Where the tokens go** — each model's mix of cache read, cache write, fresh input, and output
+- **Who uses it** — the people who called it most; **See all** lists everyone
 
-Rows mark which model is **Better** or **Cheapest**, and show ratios such as **3×** or **about the same**.
+Last, small charts show each model over the period, one row per measure: spend, tokens, model calls, people, share served from cache, time to first token, and failed calls by day. Point at a day in any chart to see every model's value for that day.
 
 ## A model's page
 
-Select a model to open its page:
+Select a model to open its page. **Compare** opens it in Models → Compare.
 
 - **Called through** — the sources that used it
-- **Spend**, **Tokens**, **Sessions**, **Active users**, and **Model calls**, with spend over time
+- **Spend**, **Tokens**, **Sessions**, **Active users**, and **Model calls**, with spend over time by source
 - **Sources** and **Providers** — select one to narrow the page to it — plus principals and sessions
 - **Price history** — input, output, cache read, and cache write prices over time
-- **Current list prices** — per provider, per million tokens: input, output, cache read, cache write, and combined, with when each was observed
-
+- **Current list prices** — per provider, per million tokens: input, output, cache read, cache write, and input plus output, with when each was observed

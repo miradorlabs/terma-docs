@@ -14,7 +14,7 @@ Pull request data comes from GitHub. The connection belongs to the whole organiz
 2. In the **GitHub** panel, select **Install on GitHub** and install the Terma app on your GitHub organization.
 3. Select **Connect GitHub** to sign in to GitHub and finish the connection.
 
-Once connected, the panel lists each connected GitHub account with its status and a **Disconnect** option.
+Once connected, the panel lists each connected GitHub account with who connected it and a **Disconnect** option, and **Connect another** adds a further GitHub organization.
 
 <Note>
   GitHub is optional. Commit attribution works without it — trailers are stamped locally by terma's commit hooks, which work with GitHub, GitLab, Bitbucket, and self-hosted Git. The GitHub connection adds pull requests, merges, and issues beside your telemetry.
@@ -22,7 +22,7 @@ Once connected, the panel lists each connected GitHub account with its status an
 
 ## Browsing pull requests
 
-Choose a repository from the **Repositories** list on the left; private repositories are marked with a lock. For the selected repository and period, three cards summarize:
+Choose a repository from the list on the left, or find one by name; private repositories are marked with a lock. **Refresh** reloads them from GitHub. For the selected repository and period, three cards summarize:
 
 - **Linked session cost** (or **Output tokens** in the Tokens view) — the cost of the sessions linked to its pull requests
 - **Tokens burned** — the tokens of those sessions
@@ -33,7 +33,7 @@ Choose a repository from the **Repositories** list on the left; private reposito
 - **Group by:** **PRs** or **Sessions**
 - **State:** **All**, **Open**, or **Closed**
 - **Search** loaded pull requests by title, number, or author
-- **Sort:** **Recently updated**, **Highest linked cost**, or **Most tokens**
+- **Sort:** **Recently updated**, **Highest linked cost** (not in the Tokens view), or **Most tokens**
 
 ### Columns
 
@@ -48,7 +48,7 @@ Expand a pull request to see its sessions. Each is marked **Explicit PR activity
 
 ## How sessions are linked
 
-A session is linked to a pull request through confirmed Git activity from the session's own tool calls, such as the commits and pushes it made and the pull requests it opened. Open a session's replay to see that activity in its **Git activity** panel.
+A session is linked to a pull request through Git activity recorded in the session that names that pull request, such as opening or merging it. Open a session's page to see that activity in its **Git activity** panel.
 
 <Note>
   Linked cost is the cost of the linked sessions, not a per-commit cost. When one session is linked to several pull requests, its whole usage is shown against each of them, so adding linked cost across those pull requests counts that session more than once.

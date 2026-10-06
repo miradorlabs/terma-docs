@@ -17,12 +17,12 @@ Every metric carries one of two badges:
 
 Open **Metrics → Explore** to build a query:
 
-1. **Choose a metric** from **Recent**, **Derived by Terma — Normalized across harnesses**, or **Ingested from harnesses**.
+1. **Choose a metric** from **Recent**, the **Derived** metrics (normalized across harnesses), or the **Ingested** ones (as each harness exports them).
 2. **Choose a measurement.** Counters offer **Increase**, **Rate / second**, and **Latest value**; gauges offer **Latest value**; histograms offer **Average**, **Observations**, **Observation sum**, **Median (estimated)**, and **p95 (estimated)**.
 3. **Filter** by attribute and value, and **split** into a series per value of up to four attributes.
 4. **Pick a time range** — 5m, 15m, 1h, 4h, 12h, 1d (the default), 7d, or 30d — and a chart style: **Line**, **Area**, **Bars**, or **Stacked**.
 
-Select **Edit as PromQL** to write the query yourself, and **Add query** to plot several on one chart. The legend shows each series' latest, peak, and total; click a series to show only it, or shift-click to toggle it.
+Select **Edit as PromQL** to write the query yourself, and **Add query** to plot up to six on one chart. The legend shows each series' latest, peak, and total; click a series to show only it, or shift-click to toggle it.
 
 Not sure where to start? The empty page suggests **Spend by model**, **Tokens by harness**, **Model calls by provider**, and **Spend by person**.
 
@@ -30,32 +30,32 @@ Not sure where to start? The empty page suggests **Spend by model**, **Tokens by
 
 ## Dashboards
 
-Open **Metrics → Dashboards** to see your dashboards, each with a live preview.
+Open **Metrics → Dashboards** to see the team's dashboards, each with a live preview. Everyone in the team sees the same dashboards. A new team has none: the empty page offers **New dashboard** and Terma's templates.
 
 ### Create a dashboard
 
 Select **New dashboard** and choose:
 
 - **Blank** — start empty, with room for up to 24 widgets
-- **From a template** — start from one of Terma's templates
+- **From a template** — start from one of Terma's ready-made dashboards, with its widgets already in place
 
 Give it a name and description, and choose the time window it **Opens on**.
 
 ### Edit a dashboard
 
-Select **Edit** to drag and resize widgets, and **Add widget** to add one. Changes save automatically, and you can undo them.
+Select **Edit** to drag and resize widgets, and **Add widget** to add one; select **Done** when you finish. Every change saves as you make it, and the header shows **Saved**. Deleting a widget offers **Undo**.
 
 A widget is one of:
 
 | Type | Shows |
 |---|---|
 | **Timeseries** | One or more series over time, as lines, areas, bars, or stacked |
-| **Stat** | A single number |
+| **Stat** | A single number: the sum of its series, or with **Figure** set to **Count**, how many series are non-zero |
 | **Pie** | Shares of a total |
 | **Table** | Values per series |
 | **Text** | Notes in Markdown |
 
-Each widget holds up to six queries, built with the metric picker or written in PromQL. A widget can follow the dashboard's time window or pin its own. From a widget's menu you can edit, open it in Explore, duplicate, resize, or delete it.
+Each widget holds up to four queries, built with the metric picker or written in PromQL. A timeseries follows the dashboard's time window unless you pin its own; a stat, pie, or table always pins its window, and shows it on the tile. From a widget's menu you can edit, open it in Explore, duplicate, resize (**S**, **M**, or **L**), or delete it.
 
 ### View a dashboard
 

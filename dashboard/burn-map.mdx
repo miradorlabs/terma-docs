@@ -10,7 +10,7 @@ The burn map shows your current backlog rather than a period, so it has no perio
 
 ## Landed and unlanded work
 
-Every file an agent touched is in one of four states, which you can filter by:
+Every file an agent touched is in one of four states. A bar shows the split, and a chip for each state filters the map to it:
 
 | State | Meaning |
 |---|---|
@@ -23,7 +23,7 @@ The summary line reads, for example, **214 files touched · 71% landed · $182 u
 
 ### Unlanded spend by age
 
-A strip breaks unlanded spend down by how long it has been since each file's last edit:
+The **Unlanded spend by age** strip (**Unlanded output by age** in the Tokens view) breaks unlanded work down by how long it has been since each file's last edit, with the files and sessions in each tier:
 
 - **Active** — edited in the last 24 hours
 - **Open** — last edited 1 to 7 days ago
@@ -45,7 +45,7 @@ The treemap shows one tile per directory. Choose what sizes the tiles with **Siz
 
 Color shows unlanded burn. A red hatch marks directories whose work was mostly discarded, and a dashed outline marks directories with files in an open pull request.
 
-Below the treemap, a ranked list of files can be ordered by **Unlanded**, **Edits**, **Sessions**, or **Oldest first**. Files in an open pull request are tagged **in PR**.
+Select a tile for its files. Below the treemap, a ranked list of files can be ordered by **Unlanded**, **Edits**, **Sessions**, or **Oldest first**, which puts the stalest unlanded work at the top. Files in an open pull request are tagged **in PR**.
 
 ## A file's page
 
@@ -66,5 +66,5 @@ The file page refreshes itself every few seconds while you watch.
 - A directory with a lot of **Discarded** work is where agents spent effort that was thrown away — often a sign the task or the code there is hard for them.
 
 <Note>
-  The burn map is built from the files agents edit, as reported by their hooks, and from the Git activity their sessions produce. Both are reported for repositories your team's collection policy collects, once each developer has run `terma setup`.
+  The burn map is built from the files agents edit, as reported by their hooks, and from the Git activity their sessions produce. Both are reported for repositories your team's [collection policy](/concepts/collection-policy) collects, once each developer has run [`terma setup`](/cli/setup).
 </Note>
