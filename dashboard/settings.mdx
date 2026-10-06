@@ -20,7 +20,7 @@ The team's collection policy decides what every member's `terma` CLI sends. Ever
 | **Commits** | **Stamp commits with the agent session** installs commit hooks in repositories where an agent works, so commits are linked to the session that wrote them. Existing hooks keep running. |
 | **Never sent** | **Don't send prompts** and **Don't send tool inputs and results** remove that content on each member's machine before anything leaves it. |
 
-Each repository is written as `host/owner/name`, for example `github.com/acme/api` (a longer path for GitLab subgroups). Type or paste an entry — a clone URL is converted for you — or, with GitHub connected, select **Add from GitHub**. A session is collected only inside a git working copy whose `origin` remote matches an entry, ignoring case. See [Privacy and data](/concepts/privacy) for how the CLI matches repositories.
+Each repository is written as `host/owner/name`, for example `github.com/acme/api` (a longer path for GitLab subgroups). Type or paste an entry — a clone URL is converted for you — or, with GitHub connected, select **Add from GitHub**. A session is collected only inside a git working copy whose `origin` remote matches an entry, ignoring case. See [Collection policy](/concepts/collection-policy) for how each setting works, how repositories are matched, and how a change reaches members' machines.
 
 Each session reports to the team of the developer who ran it, chosen when they ran `terma setup`.
 

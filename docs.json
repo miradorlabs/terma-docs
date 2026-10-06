@@ -44,6 +44,7 @@
             "group": "Core Concepts",
             "pages": [
               "concepts/overview",
+              "concepts/collection-policy",
               "concepts/sessions",
               "concepts/attribution",
               "concepts/entitlements",
