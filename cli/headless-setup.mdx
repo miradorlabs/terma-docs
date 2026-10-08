@@ -35,7 +35,7 @@ Setup sets up the key's own team, so there is no organization or team to choose.
 Setup then works as it does for a person: it fetches the team's collection policy, points your agents at the local relay, and writes their machine-wide hooks. In its summary, **Signed in** names the key by its first characters, for example `server key ter_srv_3f9a…`, and **Server key** says where the key is kept.
 
 <Tip>
-  On a VM created for each session, run setup as part of the VM's start-up, before any coding agent starts. An agent that was already running keeps the configuration it started with.
+  On a VM created for each session, run setup as part of the VM's start-up, before any coding agent starts. An agent that was already running keeps the configuration it started with. On a machine with no per-user service manager, as in many containers and VMs, add `--relay-service off`: the relay then starts when an agent needs it, and setup doesn't warn that it couldn't install the background service.
 </Tip>
 
 ## After setup
@@ -49,7 +49,7 @@ Only `terma setup` needs the key again:
 | To | Do |
 |---|---|
 | Repair the machine | Run `TERMA_API_KEY=<the team's server key> terma setup` |
-| Rotate the key | Create a new key, run setup with it on every machine that uses the old one, then revoke the old one |
+| Rotate the key | Create a new key and put it in the secret your machines start with, run setup with it on every running machine that uses the old one, then revoke the old one |
 | Stop using the key on this machine | Run `TERMA_API_KEY= terma teardown --sign-out --yes` ([`terma teardown`](/cli/teardown)) |
 
 `--sign-out` stops the key being the machine's sign-in, and `--yes` skips the confirmation, which a machine with no terminal can't answer. The key stays stored on the machine and keeps working until you revoke it in **Team settings → API keys**.
