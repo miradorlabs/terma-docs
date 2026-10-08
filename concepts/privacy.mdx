@@ -77,7 +77,7 @@ A machine with no one to sign in, such as a CI runner or an ephemeral VM, signs 
 ## Limits worth knowing
 
 - **Attribution is not authentication.** Commit trailers and agent identities attribute work among colleagues. Anyone with commit access can write a trailer by hand, so treat them as who to credit the work to, not as proof of who did it.
-- **Processes running as you** can reach your credentials and keys. If you run untrusted code, run `terma teardown --sign-out`.
+- **Processes running as you** can reach your credentials and keys. If you run untrusted code, run `terma teardown --sign-out`, which revokes your sign-in. It leaves the team keys terma kept on the machine, and they keep working until you revoke them in **Team settings → API keys**. On a machine [set up with a server key](/cli/headless-setup), that key is one of them.
 
 ## Reporting a vulnerability
 

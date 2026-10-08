@@ -52,7 +52,7 @@ Only `terma setup` needs the key again:
 | Rotate the key | Create a new key and put it in the secret your machines start with, run setup with it on every running machine that uses the old one, then revoke the old one |
 | Stop using the key on this machine | Run `TERMA_API_KEY= terma teardown --sign-out --yes` ([`terma teardown`](/cli/teardown)) |
 
-`--sign-out` stops the key being the machine's sign-in, and `--yes` skips the confirmation, which a machine with no terminal can't answer. The key stays stored on the machine and keeps working until you revoke it in **Team settings → API keys**.
+`--sign-out` stops the key being the machine's sign-in, and `--yes` skips the confirmation, which a machine with no terminal can't answer. The key stays stored on the machine and keeps working until you revoke it in **Team settings → API keys**. Signing out is not enough before you run code you don't trust on the machine: revoke the key.
 
 ## Where the key is kept
 
