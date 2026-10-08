@@ -59,4 +59,4 @@ Organization admins map principals to members on **Team settings → Principals*
 
 ## Keys
 
-Claude Code and Codex need no keys: `terma setup` handles sign-in and routing. For other tools, such as OpenRouter, **Team settings → Team API keys** lists the team's keys. Revoke one there when a tool no longer needs it. See [Settings](/dashboard/settings#team-api-keys).
+Claude Code and Codex need no keys: `terma setup` handles sign-in and routing. A machine with no one to sign in, such as a CI runner or an ephemeral VM, is the exception: it signs in with an Ingest only key ([Headless setup](/cli/headless-setup)). For other tools, such as OpenRouter, **Team settings → API keys** lists the team's keys. Revoke one there when a tool no longer needs it. See [Settings](/dashboard/settings#team-api-keys).

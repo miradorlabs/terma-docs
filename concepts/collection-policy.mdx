@@ -68,7 +68,7 @@ A session that isn't collected is dropped on the developer's machine: its teleme
 
 ## How changes reach every machine
 
-Each member's terma fetches the policy with their own sign-in and keeps a copy on the machine, which its hooks and relay read. It fetches a fresh copy whenever it delivers what the hooks queued, which happens after an agent session ends or a commit is made, at most once a minute. `terma setup` and `terma doctor` fetch it too. So a change you save reaches each member's machine at their next session end or commit, with nothing for them to run. A member who wants it at once can run `terma doctor`.
+Each member's terma fetches the policy with their own sign-in (or, on a machine [set up with a server key](/cli/headless-setup), with that key) and keeps a copy on the machine, which its hooks and relay read. It fetches a fresh copy whenever it delivers what the hooks queued, which happens after an agent session ends or a commit is made, at most once a minute. `terma setup` and `terma doctor` fetch it too. So a change you save reaches each member's machine at their next session end or commit, with nothing for them to run. A member who wants it at once can run `terma doctor`.
 
 - **Tightening applies to what's queued.** Events already waiting on a machine are sent under the current policy. An event from a repository you removed doesn't leave, and one queued before you turned on **Don't send prompts** leaves without its prompts.
 - **Widening applies from then on.** Adding a repository collects sessions there from the change onwards, not earlier work.

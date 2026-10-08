@@ -12,7 +12,7 @@ It is deliberately small. You install it, run `terma setup` once, and you are do
 
 | Command | When | What it does |
 |---|---|---|
-| [`terma setup`](/cli/setup) | Once per developer | Signs you in, chooses your team and coding agents, and writes machine-wide hooks. Run it again to switch team or organization, or to repair the machine. |
+| [`terma setup`](/cli/setup) | Once per developer | Signs you in, chooses your team and coding agents, and writes machine-wide hooks. Run it again to switch team or organization, or to repair the machine. A machine with no browser signs in with a [team server key](/cli/headless-setup). |
 | [`terma doctor`](/cli/doctor) | Any time | Verifies the whole chain end to end. Every failure names its fix, usually `terma setup` again. |
 | [`terma update`](/cli/update) | When a release is out | Installs the latest release and refreshes what terma installed. |
 | [`terma teardown`](/cli/teardown) | To leave | Undoes setup on this machine. `--sign-out` also signs you out. |
