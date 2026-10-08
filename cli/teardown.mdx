@@ -29,7 +29,7 @@ terma teardown --sign-out   # undo setup and sign out
 
 The commit hooks terma added to repositories stay. With terma gone, each one only runs the hook it displaced, so your commits are unaffected.
 
-Your sign-in is kept, so `terma setup` sets the machine up again in seconds. Agents still running keep reporting once you do, without a restart. `--sign-out` also revokes this machine's sign-in, and the next setup signs you in again.
+Your sign-in is kept, so `terma setup` sets the machine up again in seconds. Agents still running keep reporting once you do, without a restart. `--sign-out` also revokes this machine's sign-in, and the next setup signs you in again. On a machine set up with a [server key](/cli/headless-setup), `--sign-out` stops the key being the machine's sign-in instead; the key keeps working until you revoke it in **Team settings → API keys**.
 
 ## Flags
 

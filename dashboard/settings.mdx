@@ -33,11 +33,11 @@ OTEL_EXPORTER_OTLP_ENDPOINT="https://otel.terma.ai"
 OTEL_EXPORTER_OTLP_HEADERS="Authorization=Bearer <team API key>"
 ```
 
-To create a key, enter a name — for example the tool it is for — and select **Create key**. **The full key is shown only once**, so select **Copy key** before you select **Done**.
+To create a key, enter a name — for example the tool it is for — choose its access, and select **Create key**. **Ingest only**, the default, can send telemetry and read the team's collection policy, and nothing else, which is all an exporter or a [headless machine](/cli/headless-setup) needs. **Full access** can also read and write the team's data. **The full key is shown only once**, so select **Copy key** before you select **Done**.
 
-The keys table shows each key's name, prefix, status, when it was created, and when it was last used, ten to a page. Search by name, id, or prefix, or paste a full key to find it. **Revoke** a key to stop it working; **Re-activate** brings a revoked key back.
+The keys table shows each key's name, prefix, access, status, when it was created, and when it was last used, ten to a page. Search by name, id, or prefix, or paste a full key to find it. **Revoke** a key to stop it working; **Re-activate** brings a revoked key back.
 
-You don't need a team API key for Claude Code or Codex: `terma setup` signs each developer in and routes their sessions for them.
+You don't need a team API key for Claude Code or Codex: `terma setup` signs each developer in and routes their sessions for them. The exception is a machine with no one to sign in, such as a CI runner or an ephemeral VM: there `terma setup` signs in with an Ingest only key. See [Set up a machine with no browser](/cli/headless-setup).
 
 ### Principal mapping
 

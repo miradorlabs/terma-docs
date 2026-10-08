@@ -1,0 +1,80 @@
+---
+title: "Set up a machine with no browser"
+sidebarTitle: "Headless setup"
+description: "Set up terma on a CI runner, an ephemeral VM, or any machine with no one to sign in, with a team server key in TERMA_API_KEY instead of a browser sign-in."
+---
+
+[`terma setup`](/cli/setup) normally signs you in through your browser. A machine with no one to sign in, such as a CI runner or a VM created for each agent session, signs in with a team server key instead. Setup reads the key from `TERMA_API_KEY` and never opens a browser.
+
+## Create an Ingest only key
+
+<Steps>
+  <Step title="Open the team's API keys">
+    In Terma, open **Team settings → API keys** for the team the machine reports to.
+  </Step>
+  <Step title="Create the key">
+    Enter a name, for example `ci-runners`, keep **Ingest only** selected, and select **Create key**.
+  </Step>
+  <Step title="Copy it into your secret store">
+    **The full key is shown only once.** Select **Copy key** and store it where the machine reads its secrets, such as a CI secret or the VM's environment, before you select **Done**.
+  </Step>
+</Steps>
+
+An Ingest only key can send telemetry into its team and read the team's collection policy, and nothing else. Use one: setup keeps the key on the machine, where anything running there can use it. Setup warns when a key can also read or write the team's data.
+
+## Run setup with the key
+
+```bash
+TERMA_API_KEY=ter_srv_… terma setup --yes --harness claude
+```
+
+Setup sets up the key's own team, so there is no organization or team to choose. `--org` and `--team` accept only that organization's and team's ids. `--yes` and `--harness` skip the agent picker: name the agents installed on the machine, `claude`, `codex`, or both.
+
+Setup then works as it does for a person: it fetches the team's collection policy, points your agents at the local relay, and writes their machine-wide hooks. In its summary, **Signed in** names the key by its first characters, for example `server key ter_srv_3f9a…`, and **Server key** says where the key is kept.
+
+<Tip>
+  On a VM created for each session, run setup as part of the VM's start-up, before any coding agent starts. An agent that was already running keeps the configuration it started with.
+</Tip>
+
+## After setup
+
+Setup keeps the key as the team's key, so your agents' hooks, the relay, and `terma doctor` need no `TERMA_API_KEY` afterwards. The relay keeps the team's collection policy current with the key, as it would with a person's sign-in.
+
+Only `terma setup` needs the key again:
+
+| To | Do |
+|---|---|
+| Repair the machine | Run `TERMA_API_KEY=<the team's server key> terma setup` |
+| Rotate the key | Create a new key, run setup with it, then revoke the old one |
+| Stop using the key on this machine | Run [`terma teardown --sign-out`](/cli/teardown) |
+
+`terma teardown --sign-out` stops the key being the machine's sign-in. The key itself keeps working until you revoke it in **Team settings → API keys**.
+
+## Where the key is kept
+
+Setup keeps the key in the system keychain. On a machine with no usable keychain, which is common on CI runners and minimal VMs, it keeps the key in plain text in `~/.config/terma/keys.json`, readable only by you, and says so in its summary. `--insecure-storage` chooses the file up front.
+
+Setup checks that `TERMA_API_KEY` holds a team server key before sending it anywhere, so a personal token set there by mistake never leaves the machine. The key is sent only to the Terma host it was set up against.
+
+## When setup refuses
+
+| Message | Fix |
+|---|---|
+| `TERMA_API_KEY is set, but not to a team server key (ter_srv_…)` | Set it to a team server key, or unset it to sign in as a person |
+| `the server key in TERMA_API_KEY cannot send telemetry` | Create a key with **Ingest only** selected |
+| `the server key in TERMA_API_KEY belongs to no team` | Create the key from the team's **Team settings → API keys** |
+| `--org <name>: under a server key, setup cannot look up an organization by name` | Pass the organization's id, or leave `--org` out |
+| `--team <name>: under a server key, setup cannot look up a team by name` | Pass the team's id, or leave `--team` out |
+| `read this team's current key (…): unlock the system keychain` | Unlock the system keychain, then run setup again |
+
+## Check it
+
+`terma doctor`'s **signed in** check names the key, for example `server key ter_srv_3f9a… in <organization>`. It fails when the machine was set up with a server key but no longer holds one for the team, or when the key was set up against a different Terma host. Either way the fix it names is `TERMA_API_KEY=<the team's server key> terma setup`.
+
+## Next step
+
+<CardGroup cols={1}>
+  <Card title="terma doctor" icon="stethoscope" href="/cli/doctor">
+    Check the whole chain end to end.
+  </Card>
+</CardGroup>

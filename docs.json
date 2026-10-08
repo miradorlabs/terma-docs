@@ -85,7 +85,8 @@
             "group": "Overview",
             "pages": [
               "cli/overview",
-              "cli/installation"
+              "cli/installation",
+              "cli/headless-setup"
             ]
           },
           {

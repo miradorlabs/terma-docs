@@ -23,7 +23,7 @@ Each check reports `ok`, `warn` (works, but only in part), `FAIL`, or `skip` (di
 | Check | What it verifies |
 |---|---|
 | **terma on PATH** | The `terma` your hooks run is the build you are running |
-| **signed in** | A working sign-in exists for this machine |
+| **signed in** | A working sign-in exists for this machine: your account, or the team server key it was [set up with](/cli/headless-setup) |
 | **repository collected** | Your team's policy collects this repository, and which `origin` terma sees |
 | **commit hooks in effect** | Commit stamping is wired in this repository's `.git/hooks`, or why it is not (for example, husky v9 sets its own hooks path) |
 | **machine-wide hooks run** | Each agent's machine-wide hooks are in place |

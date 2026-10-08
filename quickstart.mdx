@@ -67,6 +67,10 @@ This guide takes you from a new account to your first agent session in Terma. Yo
     Setup then points your agents' telemetry at a relay on your machine and writes their machine-wide hooks. Nothing is written into your repositories, and git's configuration is not touched. See [`terma setup`](/cli/setup).
 
     When it finishes, restart any agent that was already running so it loads the new configuration.
+
+    <Tip>
+      Setting up a CI runner or an ephemeral VM, with no one to sign in? Use a team server key instead: see [Set up a machine with no browser](/cli/headless-setup).
+    </Tip>
   </Step>
 
   <Step title="Collect your repository">

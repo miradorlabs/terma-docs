@@ -16,7 +16,7 @@ terma setup
 
 <Steps>
   <Step title="Signs you in">
-    Your browser opens on Terma, you approve the CLI, and a single-use code is handed back to terma on `127.0.0.1` (PKCE). A sign-in that still works is reused. `--no-browser` prints the URL instead of opening it.
+    Your browser opens on Terma, you approve the CLI, and a single-use code is handed back to terma on `127.0.0.1` (PKCE). A sign-in that still works is reused. `--no-browser` prints the URL instead of opening it. On a machine with no browser, such as a CI runner or an ephemeral VM, setup signs in with a team server key in `TERMA_API_KEY` instead: see [Set up a machine with no browser](/cli/headless-setup).
   </Step>
   <Step title="Records which coding agents you use">
     A checklist preselects the agents installed on your machine. Each choice covers an agent's CLI and its desktop app, which share the agent's user-level settings:
@@ -71,6 +71,7 @@ Setup is safe to run again, and running it again is how you change anything:
 | Switch organization | `terma setup --org <name-or-id>` |
 | Change your agents | `terma setup` and change the checklist, or `--harness` |
 | Move the relay off a busy port | `terma setup --relay-addr 127.0.0.1:<port>` |
+| Set up a machine with no browser | `TERMA_API_KEY=ter_srv_… terma setup --yes --harness claude` ([Headless setup](/cli/headless-setup)) |
 
 `terma login` is an alias for `terma setup`.
 
@@ -108,7 +109,7 @@ terma setup --yes --harness claude,codex --team Payments
 
 ## What gets stored
 
-- Your sign-in and team keys are kept in the system keychain, or in plain text under `~/.config/terma` with `--insecure-storage`.
+- Your sign-in and team keys are kept in the system keychain, or in plain text under `~/.config/terma` with `--insecure-storage` or when no keychain is usable. On a machine set up with a server key, the key is kept as the team's key.
 - Your choices (organization, team, agents) are kept in `~/.config/terma`.
 - What terma writes as it runs (the event queue, the relay, the hooks' state) lives in `~/.local/state/terma`.
 - Your agents' user-level settings gain terma's telemetry exporter and hooks. [`terma teardown`](/cli/teardown) restores them.
