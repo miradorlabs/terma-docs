@@ -16,11 +16,13 @@ description: "Set up terma on a CI runner, an ephemeral VM, or any machine with 
     Enter a name, for example `ci-runners`, keep **Ingest only** selected, and select **Create key**.
   </Step>
   <Step title="Copy it into your secret store">
-    **The full key is shown only once.** Select **Copy key** and store it where the machine reads its secrets, such as a CI secret or the VM's environment, before you select **Done**.
+    **Copy the key now:** the panel doesn't show it again. Select **Copy key** and store it where the machine reads its secrets, such as a CI secret or the VM's start-up configuration, before you select **Done**.
   </Step>
 </Steps>
 
-An Ingest only key can send telemetry into its team and read the team's collection policy, and nothing else. Use one: setup keeps the key on the machine, where anything running there can use it. Setup warns when a key can also read or write the team's data.
+An Ingest only key can send telemetry into its team but cannot read the team's sessions or metrics ([what each key can do](/concepts/privacy#team-api-keys)). Use one: setup keeps the key on the machine, where anything running there can use it. Setup warns when a key can also read or write the team's data.
+
+Revoking a key cuts off every machine that uses it, so give each pool of machines, such as one CI fleet, its own key.
 
 ## Run setup with the key
 
@@ -40,15 +42,17 @@ Setup then works as it does for a person: it fetches the team's collection polic
 
 Setup keeps the key as the team's key, so your agents' hooks, the relay, and `terma doctor` need no `TERMA_API_KEY` afterwards. The relay keeps the team's collection policy current with the key, as it would with a person's sign-in.
 
+Pass the key to setup alone, for example as an environment variable of the setup step only. While `TERMA_API_KEY` stays set, terma uses it as given instead of the key it kept: `terma doctor` reports `using TERMA_API_KEY`, and `terma teardown --sign-out` refuses. Clear it for those commands; an empty value counts as unset.
+
 Only `terma setup` needs the key again:
 
 | To | Do |
 |---|---|
 | Repair the machine | Run `TERMA_API_KEY=<the team's server key> terma setup` |
-| Rotate the key | Create a new key, run setup with it, then revoke the old one |
-| Stop using the key on this machine | Run [`terma teardown --sign-out`](/cli/teardown) |
+| Rotate the key | Create a new key, run setup with it on every machine that uses the old one, then revoke the old one |
+| Stop using the key on this machine | Run `TERMA_API_KEY= terma teardown --sign-out --yes` ([`terma teardown`](/cli/teardown)) |
 
-`terma teardown --sign-out` stops the key being the machine's sign-in. The key itself keeps working until you revoke it in **Team settings → API keys**.
+`--sign-out` stops the key being the machine's sign-in, and `--yes` skips the confirmation, which a machine with no terminal can't answer. The key stays stored on the machine and keeps working until you revoke it in **Team settings → API keys**.
 
 ## Where the key is kept
 
@@ -62,14 +66,17 @@ Setup checks that `TERMA_API_KEY` holds a team server key before sending it anyw
 |---|---|
 | `TERMA_API_KEY is set, but not to a team server key (ter_srv_…)` | Set it to a team server key, or unset it to sign in as a person |
 | `the server key in TERMA_API_KEY cannot send telemetry` | Create a key with **Ingest only** selected |
+| `check the server key in TERMA_API_KEY: …` | Terma refused the key, or could not be reached. Check that the key was copied in full and is not revoked, and that the machine can reach Terma |
 | `the server key in TERMA_API_KEY belongs to no team` | Create the key from the team's **Team settings → API keys** |
 | `--org <name>: under a server key, setup cannot look up an organization by name` | Pass the organization's id, or leave `--org` out |
+| `TERMA_API_KEY is set — its server key signs in to its own organization` | `--org` names another organization. Leave `--org` out, or unset `TERMA_API_KEY` to sign in to that organization as a person |
 | `--team <name>: under a server key, setup cannot look up a team by name` | Pass the team's id, or leave `--team` out |
+| `--team <id>: the server key in TERMA_API_KEY is team <id>'s` | `--team` names another team. Leave `--team` out |
 | `read this team's current key (…): unlock the system keychain` | Unlock the system keychain, then run setup again |
 
 ## Check it
 
-`terma doctor`'s **signed in** check names the key, for example `server key ter_srv_3f9a… in <organization>`. It fails when the machine was set up with a server key but no longer holds one for the team, or when the key was set up against a different Terma host. Either way the fix it names is `TERMA_API_KEY=<the team's server key> terma setup`.
+`terma doctor`'s **signed in** check names the key, for example `server key ter_srv_3f9a… in <organization>`. It fails when the machine was set up with a server key but no longer holds one for the team, or when the key was set up against a different Terma host. Either way the fix it names is `TERMA_API_KEY=<the team's server key> terma setup`. Run doctor with `TERMA_API_KEY` cleared: while it is set, the check reports `using TERMA_API_KEY` and doesn't look at the kept key.
 
 ## Next step
 

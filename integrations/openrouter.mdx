@@ -10,7 +10,7 @@ No agent, SDK change, or proxy is required. The connection is configured once in
 
 ## How it works
 
-1. You create a **team API key** for a Terma team. This key can send telemetry to that team and nothing else.
+1. You create an **Ingest only** team API key for a Terma team. It can send telemetry to that team but cannot read the team's sessions or metrics.
 2. In OpenRouter, you add Terma as an **OpenTelemetry Collector** destination under Broadcast, using Terma's OTLP endpoint and the team API key as a bearer token.
 3. After every request, OpenRouter asynchronously posts an OTLP trace to Terma. Terma recognises the OpenRouter format, records a model call with tokens and cost, and groups calls into sessions.
 
@@ -28,10 +28,10 @@ Traces are sent after the request completes, so enabling Broadcast does not add 
     You need two values from Terma: the **OTLP endpoint** (for example `https://otel.terma.ai`) and a **team API key**.
 
     - **Setting up a new team?** In the team's setup guide, choose **Other**, then the **OpenRouter** format. Terma shows the endpoint and headers to paste, filled in with the team's auto-created **Ingestion key**.
-    - **Existing team?** Open **Team settings** and, under **Team API keys**, create a key with a recognizable name such as `OpenRouter`. The panel shows the OTLP endpoint above the keys.
+    - **Existing team?** Open **Team settings → API keys** and create a key with a recognizable name such as `OpenRouter`, keeping **Ingest only** selected. The panel shows the OTLP endpoint above the keys.
 
     <Warning>
-      A new key is shown in full only once. Copy it before leaving the page. You can revoke it later from **Team settings → Team API keys**, but you cannot view it again.
+      The panel shows a new key in full only when you create it, so copy it before leaving the page. You can revoke it later from **Team settings → API keys**.
     </Warning>
   </Step>
   <Step title="Enable Broadcast in OpenRouter">
@@ -120,7 +120,7 @@ Broadcast settings live on the OpenRouter account or organization, and each Term
 
 ## Troubleshooting
 
-- **Test Connection fails.** Check that the endpoint ends in `/v1/traces` and that the header value starts with `Bearer ` followed by the full key. A revoked key is rejected the same way; create a new one under **Team settings → Team API keys**.
+- **Test Connection fails.** Check that the endpoint ends in `/v1/traces` and that the header value starts with `Bearer ` followed by the full key. A revoked key is rejected the same way; create a new one under **Team settings → API keys**.
 - **The test passes but no sessions appear.** Confirm the requests are being made with a key covered by the Broadcast settings you edited, and that the destination's sampling rate is `1.0`. Traces arrive asynchronously, so allow a minute after the request.
 - **Everything shows as one person.** The calls share an OpenRouter API key. Create per-person keys, or map the shared key under **Team settings → Principals**.
 - **Spend looks like an estimate.** It is not. Costs for OpenRouter calls are the amounts OpenRouter reported for each request. Costs marked **Estimated** only appear for sources that do not report cost themselves.
