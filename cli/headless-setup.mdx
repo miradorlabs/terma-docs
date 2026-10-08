@@ -35,7 +35,7 @@ Setup sets up the key's own team, so there is no organization or team to choose.
 Setup then works as it does for a person: it fetches the team's collection policy, points your agents at the local relay, and writes their machine-wide hooks. In its summary, **Signed in** names the key by its first characters, for example `server key ter_srv_3f9a…`, and **Server key** says where the key is kept.
 
 <Tip>
-  On a VM created for each session, run setup as part of the VM's start-up, before any coding agent starts. An agent that was already running keeps the configuration it started with. On a machine with no per-user service manager, as in many containers and VMs, add `--relay-service off`: the relay then starts when an agent needs it, and setup doesn't warn that it couldn't install the background service.
+  On a VM created for each session, run setup as part of the VM's start-up, before any coding agent starts. An agent that was already running keeps the configuration it started with. Don't run setup while building the VM image or container: every copy made from it would carry the key, in plain text where there is no keychain, and rotating it would mean a rebuild. On a machine with no per-user service manager, as in many containers and VMs, add `--relay-service off`: the relay then starts when an agent needs it, and setup doesn't warn that it couldn't install the background service.
 </Tip>
 
 ## After setup
@@ -54,9 +54,11 @@ Only `terma setup` needs the key again:
 
 `--sign-out` stops the key being the machine's sign-in, and `--yes` skips the confirmation, which a machine with no terminal can't answer. The key stays stored on the machine and keeps working until you revoke it in **Team settings → API keys**. Signing out is not enough before you run code you don't trust on the machine: revoke the key.
 
+Server-key setup creates no key or sign-in in Terma, so a per-session VM you destroy needs no teardown first. Sign-out is for a machine you keep.
+
 ## Where the key is kept
 
-Setup keeps the key in the system keychain. On a machine with no usable keychain, which is common on CI runners and minimal VMs, it keeps the key in plain text in `~/.config/terma/keys.json`, readable only by you, and says so in its summary. `--insecure-storage` chooses the file up front.
+Setup keeps the key in the system keychain. On a machine with no usable keychain, which is common on CI runners and minimal VMs, it keeps the key in plain text in `keys.json` in terma's configuration directory (`~/.config/terma` by default, `%APPDATA%\terma` on Windows), readable only by you, and its summary names the file. `--insecure-storage` chooses the file up front.
 
 Setup checks that `TERMA_API_KEY` holds a team server key before sending it anywhere, so a personal token set there by mistake never leaves the machine. The key is sent only to the Terma host it was set up against.
 
