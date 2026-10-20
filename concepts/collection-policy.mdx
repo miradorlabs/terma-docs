@@ -5,14 +5,14 @@ description: "Each team's collection policy decides what Terma collects for the 
 
 A team's **collection policy** is the one place that decides what Terma collects for that team. An organization admin sets it in Terma. Every member's `terma` CLI fetches it and applies it on their own machine, before anything is sent. Terma applies it on its server to data that other sources send it directly. There is nothing to configure per repository and nothing to commit.
 
-Each team has its own policy. A session follows the policy of the team the developer chose when they ran [`terma setup`](/cli/setup), so two developers on different teams, working in the same repository, each follow their own team's policy.
+Each team has its own policy. A session follows the policy of the team the developer chose when they ran [`terma setup`](/cli/setup), so two developers on different teams, working in the same repository, each follow their own team's policy. Data from other sources follows the policy of the team it lands in: for OpenRouter or your own exporter, the team its API key belongs to.
 
 ## Where the policy is applied
 
 Data reaches Terma in one of two ways, and the policy is applied where each way allows:
 
 - **Harnesses** are the `terma` CLI and the OpenCode plugin it installs. They fetch the policy and apply all of it on the member's machine, before anything is sent. A session they don't collect never leaves the machine, and content the policy redacts never reaches Terma.
-- **Other sources** send to a team API key directly, without the CLI: OpenRouter Broadcast, Cloudflare AI Gateway, Cowork, Claude Enterprise, or your own OpenTelemetry exporter. Terma applies the policy on its server when the data arrives, before anything is stored. The source still sends everything it exports; Terma drops what the policy doesn't collect.
+- **Other sources** reach Terma without the CLI: OpenRouter Broadcast, Cloudflare AI Gateway, Cowork, Claude Enterprise, or your own OpenTelemetry exporter sending to a team API key. Terma applies the policy on its server when the data arrives, before anything is stored. Everything the source exports still reaches Terma; Terma drops what the policy doesn't collect.
 
 | Policy | Harnesses, on the machine | Other sources, on arrival |
 |---|---|---|
@@ -64,7 +64,7 @@ Turning stamping off stops terma adding hooks to more repositories. It doesn't r
 | **Don't send prompts** | Prompt text and model responses |
 | **Don't send tool inputs and results** | Tool parameters, input, and output |
 
-The relay on each member's machine removes this content before anything is forwarded, so it never reaches Terma. Content from other sources is removed when it reaches Terma, before it's stored. Session structure, tokens, cost, models, tools used, and timings are still collected. See [Privacy and data](/concepts/privacy).
+The relay on each member's machine removes this content before anything is forwarded, so it never reaches Terma. Content from other sources is removed when it reaches Terma, before it's stored. These two settings remove only that content: session structure, tokens, cost, models, tools used, and timings are still collected. See [Privacy and data](/concepts/privacy).
 
 ## Writing the repository list
 

@@ -123,7 +123,7 @@ OpenRouter sends to Terma directly, not through the `terma` CLI, so Terma applie
 | **Every session**, with **Don't send prompts** | Everything except prompts and completions |
 | **Every session**, with **Don't send tool inputs and results** | Everything except tool parameters, input, and output |
 
-Repository selection applies only to the `terma` CLI, which reads the repository each session runs in. OpenRouter calls aren't matched against the list, so under **Only the repositories listed** Terma keeps their usage whatever the list holds, and spend tracking is unaffected.
+Repository selection applies only to harnesses, the `terma` CLI and the OpenCode plugin it installs, which read the repository each session runs in. OpenRouter calls aren't matched against the list, so under **Only the repositories listed** Terma keeps their usage whatever the list holds, and spend tracking is unaffected.
 
 The policy is applied after OpenRouter has sent the trace. For a guarantee that content never leaves OpenRouter, use Privacy Mode.
 
