@@ -9,10 +9,10 @@ Each team has its own policy. A session follows the policy of the team the devel
 
 ## Where the policy is applied
 
-Data reaches Terma in one of two ways, and the policy is applied where each way allows:
+Terma applies the policy in one of two places, depending on how the data arrives:
 
-- **Harnesses** are the `terma` CLI and the OpenCode plugin it installs. They fetch the policy and apply all of it on the member's machine, before anything is sent. A session they don't collect never leaves the machine, and content the policy redacts never reaches Terma.
-- **Other sources** reach Terma without the CLI: OpenRouter Broadcast, Cloudflare AI Gateway, Cowork, Claude Enterprise, or your own OpenTelemetry exporter sending to a team API key. Terma applies the policy on its server when the data arrives, before anything is stored. Everything the source exports still reaches Terma; Terma drops what the policy doesn't collect.
+- **Harnesses** are the `terma` CLI and, once [OpenCode support](/integrations/opencode) ships, the plugin it installs for OpenCode. They fetch the policy and apply all of it on the member's machine, before anything is sent. A session they don't collect never leaves the machine, and content the policy redacts never reaches Terma.
+- **Other sources** reach Terma without the CLI, such as OpenRouter Broadcast, Cloudflare AI Gateway, Cowork, Claude Enterprise, or your own OpenTelemetry exporter sending to a team API key. Terma applies the policy on its server when the data arrives, before anything is stored. Everything the source exports still reaches Terma; Terma drops what the policy doesn't collect.
 
 | Policy | Harnesses, on the machine | Other sources, on arrival |
 |---|---|---|
@@ -89,7 +89,7 @@ When an agent session starts, terma reads the `origin` remote of the git working
 
 A session that isn't collected is dropped on the developer's machine: its telemetry never leaves. To check a repository, run `terma doctor` inside it. It shows the `origin` terma sees and whether your team collects it.
 
-## How changes reach every machine
+## How changes take effect
 
 Each member's terma fetches the policy with their own sign-in (or, on a machine [set up with a server key](/cli/headless-setup), with that key) and keeps a copy on the machine, which its hooks and relay read. It fetches a fresh copy whenever it delivers what the hooks queued, which happens after an agent session ends or a commit is made, at most once a minute. `terma setup` and `terma doctor` fetch it too. So a change you save reaches each member's machine at their next session end or commit, with nothing for them to run. A member who wants it at once can run `terma doctor`.
 
