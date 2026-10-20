@@ -6,6 +6,8 @@ description: "What leaves your machine, what stays local, how credentials and ke
 
 Terma collects two kinds of data from your machine: **telemetry** exported by your coding agents, and **hook events** recorded by Terma's own hooks. Both are held to your team's collection policy, applied on your machine before anything is sent.
 
+Sources that send to Terma directly, without the CLI, such as OpenRouter, are held to the same policy on Terma's server when their data arrives, before it's stored. See [Where the policy is applied](/concepts/collection-policy#where-the-policy-is-applied). This page covers your machine.
+
 ## Which sessions are collected
 
 Your team's [collection policy](/concepts/collection-policy), set by an organization admin on **Team settings → Data collection**, decides which sessions leave your machine:
