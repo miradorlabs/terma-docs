@@ -125,11 +125,11 @@ OpenRouter sends to Terma directly, not through the `terma` CLI, so Terma applie
 
 Repository selection applies only to the coding agents the Terma CLI sets up, since the CLI reads the repository each session runs in (see [where the policy is applied](/concepts/collection-policy#where-the-policy-is-applied)). OpenRouter calls aren't matched against the list, so under **Only the repositories listed** Terma keeps their usage whatever the list holds, and spend tracking is unaffected.
 
-The policy is applied after OpenRouter has sent the trace. For a guarantee that content never leaves OpenRouter, use Privacy Mode.
+The policy is applied after OpenRouter has sent the trace. For a guarantee that prompts and completions are never sent to Terma at all, use Privacy Mode.
 
 ## Privacy Mode
 
-OpenRouter's Broadcast settings include a **Privacy Mode** that strips prompts and completions from exported traces. It is set per destination: select **Privacy Mode** in the **Privacy** section of the Terma destination. With it enabled, the content never leaves OpenRouter, and Terma still receives model, provider, tokens, cost, and timing for every call, so spend tracking is unaffected. Session replay will show the call structure and usage but not the conversation text.
+OpenRouter's Broadcast settings include a **Privacy Mode** that strips prompts and completions from exported traces. It is set per destination: select **Privacy Mode** in the **Privacy** section of the Terma destination. With it enabled, OpenRouter never sends that content to Terma, and Terma still receives model, provider, tokens, cost, and timing for every call, so spend tracking is unaffected. Session replay will show the call structure and usage but not the conversation text.
 
 ## Multiple OpenRouter accounts or organizations
 

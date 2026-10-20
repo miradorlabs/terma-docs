@@ -12,7 +12,7 @@ Each team has its own policy. A session follows the policy of the team the devel
 Terma applies the policy in one of two places, depending on how the data arrives:
 
 - **Coding agents the Terma CLI sets up** (with [`terma setup`](/cli/setup)) follow the policy on the member's machine: the CLI fetches it and applies all of it before anything is sent. A session it doesn't collect never leaves the machine, and content the policy redacts never reaches Terma.
-- **Sources that send directly** reach Terma without the CLI, such as OpenRouter Broadcast, Cloudflare AI Gateway, Cowork, Claude Enterprise, or your own OpenTelemetry exporter sending with a team API key. Terma applies the policy on its server when the data arrives, before anything is stored. Everything the source exports still reaches Terma; Terma drops what the policy doesn't collect.
+- **Sources that send directly** reach Terma without the CLI, such as OpenRouter Broadcast or your own OpenTelemetry exporter sending with a team API key. Terma applies the policy on its server when the data arrives, before anything is stored. Everything the source exports still reaches Terma; Terma drops what the policy doesn't collect. Cloudflare AI Gateway, Cowork, and Claude Enterprise will be handled the same way once they're available.
 
 The two **Don't send** settings apply on top of the repository choice.
 
@@ -27,7 +27,7 @@ The two **Don't send** settings apply on top of the repository choice.
 Repository selection applies only to the coding agents the Terma CLI sets up: the CLI reads the repository each session runs in. Sources that send directly aren't matched against the list: under **Only the repositories listed**, Terma keeps their usage whatever the list holds, an empty list included, so their spend still counts.
 
 <Tip>
-  Terma redacts a direct source's content after it arrives. For a guarantee that prompts and completions never leave OpenRouter, turn on OpenRouter's **Privacy Mode** for the Terma destination. See [OpenRouter](/integrations/openrouter#privacy-mode).
+  Terma redacts a direct source's content after it arrives. For a guarantee that OpenRouter never sends prompts and completions to Terma, turn on OpenRouter's **Privacy Mode** for the Terma destination. See [OpenRouter](/integrations/openrouter#privacy-mode).
 </Tip>
 
 ## Where to find it
