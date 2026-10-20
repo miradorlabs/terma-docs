@@ -1,17 +1,38 @@
 ---
 title: "Collection policy"
-description: "Each team's collection policy decides which sessions every member's terma CLI collects, whether commits are stamped, and which content never leaves a machine. Admins set it once in Terma; every machine follows it."
+description: "Each team's collection policy decides what Terma collects for the team: which sessions, whether commits are stamped, and which content is redacted. The terma CLI applies it on each machine; Terma applies it on arrival to sources that send directly, such as OpenRouter."
 ---
 
-A team's **collection policy** is the one place that decides what Terma collects for that team. An organization admin sets it in Terma, and every member's `terma` CLI fetches it and applies it on their own machine, before anything is sent. There is nothing to configure per repository and nothing to commit.
+A team's **collection policy** is the one place that decides what Terma collects for that team. An organization admin sets it in Terma. Every member's `terma` CLI fetches it and applies it on their own machine, before anything is sent. Terma applies it on its server to data that other sources send it directly. There is nothing to configure per repository and nothing to commit.
 
 Each team has its own policy. A session follows the policy of the team the developer chose when they ran [`terma setup`](/cli/setup), so two developers on different teams, working in the same repository, each follow their own team's policy.
+
+## Where the policy is applied
+
+Data reaches Terma in one of two ways, and the policy is applied where each way allows:
+
+- **Harnesses** are the `terma` CLI and the OpenCode plugin it installs. They fetch the policy and apply all of it on the member's machine, before anything is sent. A session they don't collect never leaves the machine, and content the policy redacts never reaches Terma.
+- **Other sources** send to a team API key directly, without the CLI: OpenRouter Broadcast, Cloudflare AI Gateway, Cowork, Claude Enterprise, or your own OpenTelemetry exporter. Terma applies the policy on its server when the data arrives, before anything is stored. The source still sends everything it exports; Terma drops what the policy doesn't collect.
+
+| Policy | Harnesses, on the machine | Other sources, on arrival |
+|---|---|---|
+| **No policy** | Nothing is sent | Nothing is stored |
+| **Every session** | Every session is sent | Everything is stored |
+| **Only the repositories listed** | Only sessions in a listed repository are sent | Only usage is stored: model, tokens, cost, timing, finish reason, and ids. Messages, tool details, file paths, summaries, agent runs, and git activity are dropped |
+| **Don't send prompts** | Prompts and responses are removed before they leave the machine | Prompts and responses are removed before they're stored |
+| **Don't send tool inputs and results** | Tool content is removed before it leaves the machine | Tool content is removed before it's stored |
+
+Repository selection applies only to harnesses, which read the repository each session runs in. Other sources aren't matched against the list: under **Only the repositories listed**, Terma keeps their usage whatever the list holds, an empty list included, so their spend still counts.
+
+<Tip>
+  Terma redacts a direct source's content after it arrives. For a guarantee that prompts and completions never leave OpenRouter, turn on OpenRouter's **Privacy Mode** for the Terma destination. See [OpenRouter](/integrations/openrouter#privacy-mode).
+</Tip>
 
 ## Where to find it
 
 Open **Team settings → Data collection**. Everyone in the organization can read the policy there. Only organization admins see **Edit**, and saving replaces the whole policy at once.
 
-A new team starts with **no policy**, and a team with no policy collects nothing. The panel says "No policy yet. An organization admin can set one up." Members who run `terma setup` before then are signed in and wired up, but nothing is recorded until the policy exists. `terma doctor` reports this as "no team collection policy on this machine, so nothing is recorded".
+A new team starts with **no policy**, and a team with no policy collects nothing. The panel says "No policy yet. An organization admin can set one up." Members who run `terma setup` before then are signed in and wired up, but nothing is recorded until the policy exists. `terma doctor` reports this as "no team collection policy on this machine, so nothing is recorded". Terma accepts what other sources send to the team in the meantime, but stores none of it.
 
 ## The settings
 
@@ -24,9 +45,11 @@ Choose one:
 | Choice | What it collects |
 |---|---|
 | **Every session** | Every session on members' machines, in any repository and outside git. |
-| **Only the repositories listed** | Only sessions inside the repositories you list. An empty list collects nothing. |
+| **Only the repositories listed** | Only sessions inside the repositories you list. An empty list collects nothing from members' machines. |
 
 Use **Every session** when the team's machines are dedicated to its work. Use a list when people also work on personal or other teams' code on the same machine.
+
+The list applies only to harnesses. Under a list, other sources keep only their usage (see [Where the policy is applied](#where-the-policy-is-applied)).
 
 ### Commits: stamp commits with the agent session
 
@@ -34,14 +57,14 @@ With **Stamp commits with the agent session** on, the first agent session in a c
 
 Turning stamping off stops terma adding hooks to more repositories. It doesn't remove hooks it already added.
 
-### Never sent: redacted before it leaves a machine
+### Never sent: prompt and tool content
 
 | Setting | What is removed |
 |---|---|
 | **Don't send prompts** | Prompt text and model responses |
 | **Don't send tool inputs and results** | Tool parameters, input, and output |
 
-The relay on each member's machine removes this content before anything is forwarded, so it never reaches Terma. Session structure, tokens, cost, models, tools used, and timings are still collected. See [Privacy and data](/concepts/privacy).
+The relay on each member's machine removes this content before anything is forwarded, so it never reaches Terma. Content from other sources is removed when it reaches Terma, before it's stored. Session structure, tokens, cost, models, tools used, and timings are still collected. See [Privacy and data](/concepts/privacy).
 
 ## Writing the repository list
 
@@ -72,6 +95,7 @@ Each member's terma fetches the policy with their own sign-in (or, on a machine 
 
 - **Tightening applies to what's queued.** Events already waiting on a machine are sent under the current policy. An event from a repository you removed doesn't leave, and one queued before you turned on **Don't send prompts** leaves without its prompts.
 - **Widening applies from then on.** Adding a repository collects sessions there from the change onwards, not earlier work.
+- **Other sources follow the saved policy from then on.** Terma applies it to what they send after the change. It doesn't change data already stored.
 - **A machine that can't reach Terma keeps the last policy it fetched for up to a week.** After that it collects nothing until it can fetch the policy again, and `terma doctor` reports "the collection policy has not been refreshed for over a week".
 
 ## Related
